@@ -126,6 +126,7 @@ function computeStats() {
    Navigation
    =========================================================== */
 function go(view) {
+  stopPose();
   $$(".view").forEach(v => v.classList.remove("view--active"));
   $(`#view-${view}`).classList.add("view--active");
   $$(".nav-btn").forEach(b => b.classList.toggle("nav--on", b.dataset.view === view));
@@ -176,7 +177,7 @@ function renderExercises() {
         </div>
         <span class="lvl lvl-${ex.level}">${ex.level}</span>
       </button>`);
-    card.addEventListener("click", () => openSetup(ex));
+    card.addEventListener("click", () => openGuide(ex));
     list.appendChild(card);
   });
 }
@@ -229,6 +230,149 @@ function openSetup(ex) {
     m.close();
     startSession(ex, sets._get(), reps._get(), rest._get());
   };
+}
+
+/* ===========================================================
+   Exercise guide — parameterized side-view figure engine
+   =========================================================== */
+const FIG = { Lua:26, Lfa:26, Lt:52, Lth:50, Lsh:48, headR:12, neck:9, foot:14, floorY:168, handX:190, vbW:300, vbH:196 };
+const vadd = (a, b) => ({ x:a.x+b.x, y:a.y+b.y });
+const vsub = (a, b) => ({ x:a.x-b.x, y:a.y-b.y });
+const vmul = (a, s) => ({ x:a.x*s, y:a.y*s });
+const vunit = (a) => { const d = Math.hypot(a.x, a.y) || 1; return { x:a.x/d, y:a.y/d }; };
+function armReach(t) { return (0.96 - 0.48 * t) * (FIG.Lua + FIG.Lfa); }
+
+function circleInt(c1, r1, c2, r2, upper) {
+  const dx = c2.x-c1.x, dy = c2.y-c1.y, d = Math.hypot(dx, dy);
+  if (d > r1+r2 || d < Math.abs(r1-r2) || d === 0) return null;
+  const a = (r1*r1 - r2*r2 + d*d) / (2*d), h2 = r1*r1 - a*a;
+  if (h2 < 0) return null;
+  const h = Math.sqrt(h2), xm = c1.x + a*dx/d, ym = c1.y + a*dy/d, rx = -dy*(h/d), ry = dx*(h/d);
+  const s1 = { x:xm+rx, y:ym+ry }, s2 = { x:xm-rx, y:ym-ry };
+  return upper ? (s1.y < s2.y ? s1 : s2) : (s1.y > s2.y ? s1 : s2);
+}
+
+function elbowIK(S, H, Lua, Lfa) {
+  const dx = H.x-S.x, dy = H.y-S.y, d = Math.hypot(dx, dy) || 0.01;
+  if (d >= Lua+Lfa-0.5) return vadd(S, vmul(vunit({ x:dx, y:dy }), Lua));
+  const a = (Lua*Lua - Lfa*Lfa + d*d) / (2*d), h = Math.sqrt(Math.max(0, Lua*Lua - a*a));
+  const xm = S.x + a*dx/d, ym = S.y + a*dy/d;
+  const e1 = { x:xm - dy*(h/d), y:ym + dx*(h/d) }, e2 = { x:xm + dy*(h/d), y:ym - dx*(h/d) };
+  return e1.x < e2.x ? e1 : e2;   // elbow points back toward the feet
+}
+
+function poseGeom(ex, t) {
+  const P = ex.pose;
+  const handSurfaceY = FIG.floorY - (P.handLift || 0);
+  const footSurfaceY = FIG.floorY - (P.footLift || 0);
+  const H = { x:FIG.handX, y:handSurfaceY };
+  const bodyLen = P.support === "knees" ? (FIG.Lt + FIG.Lth) : (FIG.Lt + FIG.Lth + FIG.Lsh);
+  const fwd = P.leanFwd || 8, Rtop = armReach(0);
+  const Stop = { x:H.x + fwd, y:H.y - Math.sqrt(Math.max(1, Rtop*Rtop - fwd*fwd)) };
+  const dyF = Math.min(footSurfaceY - Stop.y, bodyLen - 1);
+  const dxF = Math.sqrt(Math.max(1, bodyLen*bodyLen - dyF*dyF));
+  const F = { x:Stop.x - dxF, y:footSurfaceY };               // foot pivot stays planted
+  // shoulder = where the planted body (circle around F) meets the planted arm (circle around H);
+  // if full bend is geometrically out of reach (raised hands / big lean), bend as far as possible.
+  const S = circleInt(F, bodyLen, H, armReach(t), true) || vadd(F, vmul(vunit(vsub(H, F)), bodyLen));
+  const u = vunit(vsub(F, S));                                 // shoulder -> foot (down the spine)
+  const hip = vadd(S, vmul(u, FIG.Lt));
+  let knee, ankle, toe;
+  if (P.support === "knees") {
+    knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));
+    ankle = { x:knee.x - FIG.Lsh*0.85, y:footSurfaceY };
+    toe = { x:ankle.x - 8, y:footSurfaceY - 6 };
+  } else {
+    knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));
+    ankle = vadd(S, vmul(u, bodyLen));
+    toe = { x:ankle.x + FIG.foot, y:footSurfaceY };
+  }
+  const E = elbowIK(S, H, FIG.Lua, FIG.Lfa);
+  const head = vadd(S, vmul(vunit(vsub(S, F)), FIG.neck + FIG.headR));
+  return { H, F, S, hip, knee, ankle, toe, E, head, handSurfaceY, footSurfaceY };
+}
+
+function figureSVG(ex, g) {
+  const P = ex.pose, n = (v) => v.toFixed(1);
+  let blocks = "";
+  if (P.handLift > 0) blocks += `<rect class="fig-surface" x="${n(g.H.x-34)}" y="${n(g.handSurfaceY)}" width="86" height="${n(FIG.floorY-g.handSurfaceY)}" rx="4"/>`;
+  if (P.footLift > 0) { const bx = Math.max(2, g.F.x - 56); blocks += `<rect class="fig-surface" x="${n(bx)}" y="${n(g.footSurfaceY)}" width="${n(g.F.x + 42 - bx)}" height="${n(FIG.floorY-g.footSurfaceY)}" rx="4"/>`; }
+  const leg = P.support === "knees"
+    ? `M${n(g.S.x)},${n(g.S.y)} L${n(g.knee.x)},${n(g.knee.y)} L${n(g.ankle.x)},${n(g.ankle.y)} L${n(g.toe.x)},${n(g.toe.y)}`
+    : `M${n(g.S.x)},${n(g.S.y)} L${n(g.ankle.x)},${n(g.ankle.y)} L${n(g.toe.x)},${n(g.toe.y)}`;
+  const lineEnd = P.support === "knees" ? g.knee : g.ankle;
+  return `<svg viewBox="0 0 ${FIG.vbW} ${FIG.vbH}" xmlns="http://www.w3.org/2000/svg" aria-label="${ex.name} side view">
+    <line class="fig-floor" x1="6" y1="${FIG.floorY}" x2="${FIG.vbW-6}" y2="${FIG.floorY}"/>
+    ${blocks}
+    <line class="fig-anno" x1="${n(g.head.x)}" y1="${n(g.head.y)}" x2="${n(lineEnd.x)}" y2="${n(lineEnd.y)}"/>
+    <path class="fig-limb" d="${leg}"/>
+    <path class="fig-limb fig-torso" d="M${n(g.S.x)},${n(g.S.y)} L${n(g.hip.x)},${n(g.hip.y)}"/>
+    <path class="fig-limb" d="M${n(g.S.x)},${n(g.S.y)} L${n(g.E.x)},${n(g.E.y)} L${n(g.H.x)},${n(g.H.y)}"/>
+    <circle class="fig-head" cx="${n(g.head.x)}" cy="${n(g.head.y)}" r="${FIG.headR}"/>
+    <circle class="fig-hand" cx="${n(g.H.x)}" cy="${n(g.H.y)}" r="5"/>
+  </svg>`;
+}
+
+/* top-down hand-placement diagram */
+const HAND_NOTES = {
+  shoulder: "Hands about shoulder-width apart, fingers pointing forward.",
+  wide:     "Hands ~1.5× shoulder width, fingers angled slightly out.",
+  diamond:  "Hands together under your chest — thumbs and index fingers form a diamond.",
+  archer:   "Hands set wide. Work one side at a time; the far arm stays straight as a kickstand.",
+  pseudo:   "Hands down by your waist, fingers turned out to the sides."
+};
+const hdHand = (cx, cy, rot) => `<ellipse class="hd-hand" cx="${cx}" cy="${cy}" rx="10" ry="13" transform="rotate(${rot||0} ${cx} ${cy})"/>`;
+const hdArm  = (a, b) => `<line class="hd-arm" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;
+function handDiagramSVG(p) {
+  const L = [72, 40], R = [128, 40];
+  const base = `<circle class="hd-head" cx="100" cy="16" r="9"/><rect class="hd-body" x="66" y="30" width="68" height="13" rx="6"/><rect class="hd-body" x="80" y="42" width="40" height="34" rx="12" opacity="0.5"/>`;
+  let s;
+  if (p === "wide")        { const hl=[38,84], hr=[162,84]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],-20)+hdHand(hr[0],hr[1],20); }
+  else if (p === "diamond"){ const hl=[94,94], hr=[106,94]; s = hdArm(L,hl)+hdArm(R,hr)+`<path class="hd-anno" d="M94,90 L106,90 L100,104 Z"/>`+hdHand(hl[0],hl[1],35)+hdHand(hr[0],hr[1],-35); }
+  else if (p === "archer") { const hl=[30,74], hr=[126,82]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],-80)+hdHand(hr[0],hr[1],0)+`<text class="hd-label" x="100" y="120" text-anchor="middle">weight over the bent arm</text>`; }
+  else if (p === "pseudo") { const hl=[84,98], hr=[116,98]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],-55)+hdHand(hr[0],hr[1],55); }
+  else                     { const hl=[72,80], hr=[128,80]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],0)+hdHand(hr[0],hr[1],0); }
+  return `<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg" aria-label="hand placement, top view">${base}${s}</svg>`;
+}
+
+/* guide view state + animation */
+let pose = { ex:null, t:0, dir:1, playing:false, raf:0 };
+function phaseLabel(t) { return t <= 0.08 ? "Top — arms locked out" : t >= 0.92 ? "Bottom — chest down" : "Lowering / pressing"; }
+function drawPose() {
+  if (!pose.ex) return;
+  $("#poseStage").innerHTML = figureSVG(pose.ex, poseGeom(pose.ex, pose.t));
+  $("#poseScrub").value = Math.round(pose.t * 100);
+  $("#posePhase").textContent = phaseLabel(pose.t);
+  $$("#poseQuick [data-pose]").forEach(b => b.classList.toggle("chip--on",
+    (b.dataset.pose === "top" && pose.t < 0.5) || (b.dataset.pose === "bottom" && pose.t >= 0.5)));
+}
+function stepPose() {
+  pose.t += 0.016 * pose.dir;
+  if (pose.t >= 1) { pose.t = 1; pose.dir = -1; } else if (pose.t <= 0) { pose.t = 0; pose.dir = 1; }
+  drawPose();
+  if (pose.playing) pose.raf = requestAnimationFrame(stepPose);
+}
+function playPose(on) {
+  pose.playing = on; cancelAnimationFrame(pose.raf);
+  const btn = $("#posePlay");
+  if (on) { pose.raf = requestAnimationFrame(stepPose); if (btn) btn.textContent = "⏸ Pause"; }
+  else if (btn) btn.textContent = "▶ Play";
+}
+function stopPose() { pose.playing = false; cancelAnimationFrame(pose.raf); const b = $("#posePlay"); if (b) b.textContent = "▶ Play"; }
+
+function openGuide(ex) {
+  pose.ex = ex; pose.t = 0; pose.dir = 1; pose.playing = false;
+  $("#guideTitle").textContent = ex.name;
+  $("#guideFocus").textContent = ex.focus;
+  const lvl = $("#guideLevel"); lvl.textContent = ex.level; lvl.className = "lvl lvl-" + ex.level;
+  $("#guideSteps").innerHTML = ex.steps.map(s => `<li>${s}</li>`).join("");
+  $("#guideKeys").innerHTML = ex.cues.map(c => `<li>${c}</li>`).join("");
+  $("#handDiagram").innerHTML = handDiagramSVG(ex.hands);
+  $("#handNote").textContent = HAND_NOTES[ex.hands] || "";
+  const gm = $("#guideMap"); gm.innerHTML = muscleSVG(); paintMap(gm, ex.muscles);
+  $("#guideMuscles").innerHTML = muscleChipsHTML(ex.muscles);
+  go("guide");
+  drawPose();
 }
 
 /* ===========================================================
@@ -561,6 +705,13 @@ function bindEvents() {
   $("#skipRest").addEventListener("click", skipRest);
   $("#addRest").addEventListener("click", addRest);
   $("#exitSession").addEventListener("click", exitSession);
+
+  // exercise guide
+  $("#exitGuide").addEventListener("click", () => go("train"));
+  $("#guideStart").addEventListener("click", () => { if (pose.ex) openSetup(pose.ex); });
+  $("#posePlay").addEventListener("click", () => playPose(!pose.playing));
+  $("#poseScrub").addEventListener("input", (e) => { playPose(false); pose.t = (+e.target.value) / 100; drawPose(); });
+  $$("#poseQuick [data-pose]").forEach(b => b.addEventListener("click", () => { playPose(false); pose.t = b.dataset.pose === "top" ? 0 : 1; drawPose(); }));
 
   // history
   $("#clearHistory").addEventListener("click", async () => {

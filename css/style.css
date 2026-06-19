@@ -214,6 +214,35 @@ p{margin:.25rem 0}
 .summary-big{text-align:center;margin:10px 0}
 .summary-big .big{font-size:3rem;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
 
+/* ===== Exercise guide ===== */
+.btn-sm{padding:8px 14px;font-size:.85rem}
+.pose-stage{display:grid;place-items:center;background:var(--surface-2);border-radius:14px;padding:8px}
+.pose-stage svg{width:100%;height:auto;max-width:340px}
+.pose-controls{display:flex;align-items:center;gap:12px;margin-top:12px}
+.scrub{flex:1;accent-color:var(--accent);height:6px}
+.fig-limb{fill:none;stroke:#c3cee6;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.fig-torso{stroke:var(--accent);stroke-width:11}
+.fig-head{fill:#c3cee6}
+.fig-hand{fill:var(--accent-2)}
+.fig-surface{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.fig-floor{stroke:var(--muted);stroke-width:2;stroke-dasharray:2 6;opacity:.45}
+.fig-anno{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 4;opacity:.65}
+
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:9px}
+.steps li{padding-left:4px;line-height:1.5}
+.steps li::marker{color:var(--accent);font-weight:800}
+.keypoints{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;color:var(--muted)}
+.keypoints li{line-height:1.45}
+
+.hand-diagram{display:grid;place-items:center;background:var(--surface-2);border-radius:14px;padding:10px;margin-bottom:8px}
+.hand-diagram svg{width:100%;height:auto;max-width:230px}
+.hd-body{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.hd-head{fill:var(--body)}
+.hd-hand{fill:var(--accent-2)}
+.hd-arm{stroke:#c3cee6;stroke-width:7;stroke-linecap:round;fill:none}
+.hd-anno{fill:rgba(255,71,87,.18);stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3}
+.hd-label{fill:var(--muted);font-size:10px;font-family:inherit}
+
 /* ===== Toast ===== */
 .toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);z-index:60;
   background:var(--surface-2);border:1px solid var(--line);color:var(--text);

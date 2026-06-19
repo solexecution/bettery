@@ -121,6 +121,57 @@
         </div>
       </section>
 
+      <!-- Exercise guide -->
+      <section id="view-guide" class="view">
+        <div class="session-head">
+          <button class="link-btn" id="exitGuide">‹ Back</button>
+          <div class="session-title">
+            <h1 id="guideTitle">Push-up</h1>
+            <p class="muted small" id="guideFocus"></p>
+          </div>
+          <span class="lvl" id="guideLevel"></span>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>The movement</h2><span class="muted small">side view</span></div>
+          <div class="pose-stage" id="poseStage"></div>
+          <div class="pose-controls">
+            <button class="btn btn-ghost btn-sm" id="posePlay">▶ Play</button>
+            <input type="range" id="poseScrub" min="0" max="100" value="0" class="scrub" aria-label="movement position" />
+          </div>
+          <div class="chips" id="poseQuick">
+            <button class="chip chip--on" data-pose="top">Top</button>
+            <button class="chip" data-pose="bottom">Bottom</button>
+            <span class="muted small" id="posePhase" style="margin-left:auto"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Hand placement</h2><span class="muted small">top-down</span></div>
+          <div class="hand-diagram" id="handDiagram"></div>
+          <p class="muted small" id="handNote"></p>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>How to do it</h2></div>
+          <ol class="steps" id="guideSteps"></ol>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Key points</h2></div>
+          <ul class="keypoints" id="guideKeys"></ul>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Muscles worked</h2></div>
+          <div class="map-wrap small-map" id="guideMap"></div>
+          <div class="muscle-chips" id="guideMuscles"></div>
+          <div class="legend"><span><i class="dot dot-prime"></i> Primary</span><span><i class="dot dot-sec"></i> Secondary</span></div>
+        </div>
+
+        <button class="btn btn-primary btn-big" id="guideStart" style="margin-bottom:10px">Start this workout →</button>
+      </section>
+
       <!-- History -->
       <section id="view-history" class="view">
         <div class="view-head"><h1>History</h1></div>
