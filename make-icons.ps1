@@ -1,4 +1,4 @@
-# Generates PecForge PNG icons (gradient background + white dumbbell).
+# Generates Bettery PNG icons (gradient background + white dumbbell).
 Add-Type -AssemblyName System.Drawing
 
 $dir = Join-Path $PSScriptRoot "icons"

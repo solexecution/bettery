@@ -1,6 +1,6 @@
 {
-  "name": "PecForge — Chest Trainer",
-  "short_name": "PecForge",
+  "name": "Bettery — Chest Trainer",
+  "short_name": "Bettery",
   "description": "Chest-focused push-up tracker with a live muscle map, set tracking and rest timers.",
   "start_url": ".",
   "scope": "./",

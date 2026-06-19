@@ -1,5 +1,5 @@
-/* PecForge service worker — app-shell cache for offline use */
-const CACHE = "pecforge-v1.0.0";
+/* Bettery service worker — app-shell cache for offline use */
+const CACHE = "bettery-v1.0.0";
 const ASSETS = [
   ".",
   "index.html",

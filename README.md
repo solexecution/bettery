@@ -1,4 +1,4 @@
-# PecForge 💪 — Chest Trainer PWA
+# Bettery 💪 — Chest Trainer PWA
 
 An installable, offline-capable Progressive Web App for chest-focused calisthenics.
 Starts with **push-ups**: pick a variation, see exactly which muscles it hits on a live

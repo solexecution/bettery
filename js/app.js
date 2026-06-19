@@ -1,11 +1,11 @@
 /* ===========================================================
-   PecForge — chest-focused push-up trainer
+   Bettery — chest-focused push-up trainer
    Vanilla JS, no build step. Data persists in localStorage.
    =========================================================== */
 "use strict";
 
 const VERSION = "1.0.0";
-const KEY = "pecforge.v1";
+const KEY = "bettery.v1";
 
 /* ---------- tiny DOM helpers ---------- */
 const $  = (s, r = document) => r.querySelector(s);
@@ -447,7 +447,7 @@ async function enableNotify() {
 
 function notify(title, body) {
   try {
-    const opts = { body, icon: "icons/icon-192.png", badge: "icons/icon-192.png", vibrate: [120, 60, 120], tag: "pecforge" };
+    const opts = { body, icon: "icons/icon-192.png", badge: "icons/icon-192.png", vibrate: [120, 60, 120], tag: "bettery" };
     if (swReg && swReg.showNotification) swReg.showNotification(title, opts);
     else if ("Notification" in window && Notification.permission === "granted") new Notification(title, opts);
   } catch (_) {}
@@ -538,7 +538,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
   deferredInstall = e;
   $("#installBtn").classList.remove("hidden");
 });
-window.addEventListener("appinstalled", () => { $("#installBtn").classList.add("hidden"); toast("Installed! Find PecForge on your home screen."); });
+window.addEventListener("appinstalled", () => { $("#installBtn").classList.add("hidden"); toast("Installed! Find Bettery on your home screen."); });
 
 /* ===========================================================
    Wire events + boot
