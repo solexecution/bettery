@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>PecForge — Chest Trainer</title>
+  <meta name="description" content="Chest-focused push-up tracker with muscle map, set tracking and rest timers." />
+  <meta name="theme-color" content="#0f1420" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PecForge" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== Header ===== -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">💪</span>
+        <span class="brand-name">PecForge</span>
+      </div>
+      <button id="installBtn" class="icon-btn hidden" title="Install app">⬇ Install</button>
+    </header>
+
+    <!-- ===== Views ===== -->
+    <main id="main">
+
+      <!-- Home -->
+      <section id="view-home" class="view view--active">
+        <p class="greeting" id="homeGreeting">Let's train.</p>
+
+        <div class="stat-row">
+          <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total push-ups</div></div>
+          <div class="stat-card"><div class="stat-num" id="statStreak">0</div><div class="stat-lbl">Day streak</div></div>
+          <div class="stat-card"><div class="stat-num" id="statSessions">0</div><div class="stat-lbl">Workouts</div></div>
+        </div>
+
+        <div class="card quickstart">
+          <div class="qs-text">
+            <h2>Today's chest session</h2>
+            <p class="muted" id="qsHint">3 sets · pick a variation to begin</p>
+          </div>
+          <button class="btn btn-primary" data-go="train">Start training →</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Chest focus</h2>
+            <span class="muted small">muscles you'll hit</span>
+          </div>
+          <div class="map-wrap small-map" id="homeMap"></div>
+          <div class="legend">
+            <span><i class="dot dot-prime"></i> Primary</span>
+            <span><i class="dot dot-sec"></i> Secondary</span>
+            <span><i class="dot dot-base"></i> Resting</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Train -->
+      <section id="view-train" class="view">
+        <div class="view-head">
+          <h1>Push-ups</h1>
+          <p class="muted">Pick a variation — the map shows what it targets.</p>
+        </div>
+        <div class="chips filter-chips" id="levelFilter">
+          <button class="chip chip--on" data-level="all">All</button>
+          <button class="chip" data-level="Beginner">Beginner</button>
+          <button class="chip" data-level="Intermediate">Intermediate</button>
+          <button class="chip" data-level="Advanced">Advanced</button>
+        </div>
+        <div id="exerciseList" class="ex-list"></div>
+      </section>
+
+      <!-- Session -->
+      <section id="view-session" class="view">
+        <div class="session-head">
+          <button class="link-btn" id="exitSession">‹ End</button>
+          <div class="session-title">
+            <h1 id="sessionTitle">Push-up</h1>
+            <p class="muted small" id="sessionFocus"></p>
+          </div>
+          <div style="width:48px"></div>
+        </div>
+
+        <div class="map-wrap" id="sessionMap"></div>
+        <div class="muscle-chips" id="sessionMuscles"></div>
+
+        <div class="set-dots" id="setDots"></div>
+
+        <!-- Active set panel -->
+        <div class="card set-panel" id="setPanel">
+          <p class="set-label" id="setLabel">Set 1 of 3</p>
+          <p class="muted small">Reps this set</p>
+          <div class="rep-stepper">
+            <button class="step-btn" id="repMinus" aria-label="fewer reps">−</button>
+            <div class="rep-value" id="repValue">12</div>
+            <button class="step-btn" id="repPlus" aria-label="more reps">+</button>
+          </div>
+          <button class="btn btn-primary btn-big" id="completeBtn">✓ Complete set</button>
+        </div>
+
+        <!-- Rest panel -->
+        <div class="card rest-panel hidden" id="restPanel">
+          <p class="muted small">Rest — next: <b id="nextSetLabel">Set 2</b></p>
+          <div class="ring-wrap">
+            <svg viewBox="0 0 120 120" class="ring">
+              <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div class="ring-num" id="restSeconds">60</div>
+          </div>
+          <div class="rest-actions">
+            <button class="btn btn-ghost" id="addRest">+15s</button>
+            <button class="btn btn-primary" id="skipRest">Skip rest →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section id="view-history" class="view">
+        <div class="view-head"><h1>History</h1></div>
+        <div class="stat-row">
+          <div class="stat-card"><div class="stat-num" id="histTotal">0</div><div class="stat-lbl">Total reps</div></div>
+          <div class="stat-card"><div class="stat-num" id="histBest">0</div><div class="stat-lbl">Best set</div></div>
+          <div class="stat-card"><div class="stat-num" id="histVol">0</div><div class="stat-lbl">This week</div></div>
+        </div>
+        <div id="historyList" class="hist-list"></div>
+        <button class="btn btn-ghost full" id="clearHistory">Clear history</button>
+      </section>
+
+      <!-- Settings -->
+      <section id="view-settings" class="view">
+        <div class="view-head"><h1>Settings</h1></div>
+
+        <div class="card">
+          <div class="card-head"><h2>Notifications</h2></div>
+          <p class="muted small">Get a buzz when your rest is over and an optional daily reminder.</p>
+          <div class="row">
+            <span id="notifyStatus">Status: checking…</span>
+            <button class="btn btn-primary" id="notifyBtn">Enable</button>
+          </div>
+          <div class="row">
+            <label for="reminderTime">Daily reminder</label>
+            <input type="time" id="reminderTime" class="input" />
+          </div>
+          <button class="btn btn-ghost full" id="testNotify">Send a test notification</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Workout defaults</h2></div>
+          <div class="row"><label>Sets</label><div class="mini-step" data-def="sets"></div></div>
+          <div class="row"><label>Reps</label><div class="mini-step" data-def="reps"></div></div>
+          <div class="row"><label>Rest (sec)</label><div class="mini-step" data-def="rest"></div></div>
+          <div class="row">
+            <label for="soundToggle">Beep on rest end</label>
+            <input type="checkbox" id="soundToggle" class="switch" />
+          </div>
+        </div>
+
+        <div class="card about">
+          <h2>About</h2>
+          <p class="muted small">PecForge focuses on the pectorals — every variation maps the exact muscles worked so you can train the whole chest: upper, mid, lower and inner.</p>
+          <p class="muted small">Your data stays on this device (localStorage). <span id="verLabel"></span></p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===== Bottom nav ===== -->
+    <nav class="bottomnav">
+      <button class="nav-btn nav--on" data-view="home"><span>🏠</span>Home</button>
+      <button class="nav-btn" data-view="train"><span>🔥</span>Train</button>
+      <button class="nav-btn" data-view="history"><span>📈</span>History</button>
+      <button class="nav-btn" data-view="settings"><span>⚙️</span>Settings</button>
+    </nav>
+
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/exercises.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
