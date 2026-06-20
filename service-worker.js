@@ -1,5 +1,5 @@
 /* Bettery service worker — app-shell cache for offline use */
-const CACHE = "bettery-v1.4.1";
+const CACHE = "bettery-v1.4.2";
 const ASSETS = [
   ".",
   "index.html",
@@ -32,6 +32,8 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
+  // stream video straight from the network — never cache partial / range responses
+  if (req.headers.has("range") || /\.(mp4|webm|mov)(\?|$)/i.test(req.url)) return;
   e.respondWith(
     caches.match(req).then(hit => {
       if (hit) return hit;

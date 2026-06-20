@@ -127,6 +127,7 @@ function computeStats() {
    =========================================================== */
 function go(view) {
   stopPose();
+  if (view !== "session") { const sv = $("#sessionVideo"); if (sv) sv.innerHTML = ""; }  // stop the demo clip
   $$(".view").forEach(v => v.classList.remove("view--active"));
   $(`#view-${view}`).classList.add("view--active");
   $$(".nav-btn").forEach(b => b.classList.toggle("nav--on", b.dataset.view === view));
@@ -453,11 +454,21 @@ function openGuide(ex) {
 /* ===========================================================
    Active session
    =========================================================== */
+const DEFAULT_VIDEO = "img/clips/pushup.mp4";   // shown during a series unless an exercise sets its own `video`
 function startSession(ex, sets, reps, rest) {
   session = { ex, sets, reps, rest, currentSet: 1, results: [], repValue: reps, startedAt: Date.now(), resting: false };
-  const sm = $("#sessionMap");
-  if (!sm.dataset.ready) { sm.innerHTML = muscleSVG(); sm.dataset.ready = "1"; }
-  paintMap(sm, ex.muscles);
+  const sv = $("#sessionVideo"), sm = $("#sessionMap");
+  const vsrc = ex.video || DEFAULT_VIDEO;
+  if (vsrc) {
+    sv.innerHTML = `<video src="${vsrc}" autoplay loop muted playsinline preload="auto"></video>`;
+    sv.classList.remove("hidden");
+    sm.classList.add("hidden");
+  } else {
+    sv.innerHTML = ""; sv.classList.add("hidden");
+    sm.classList.remove("hidden");
+    if (!sm.dataset.ready) { sm.innerHTML = muscleSVG(); sm.dataset.ready = "1"; }
+    paintMap(sm, ex.muscles);
+  }
   $("#sessionTitle").textContent = ex.name;
   $("#sessionFocus").textContent = ex.focus;
   $("#sessionMuscles").innerHTML = muscleChipsHTML(ex.muscles);

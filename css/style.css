@@ -143,6 +143,8 @@ p{margin:.25rem 0}
 .session-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 8px}
 .session-title{text-align:center;flex:1}
 .session-title h1{font-size:1.25rem}
+.session-video{border-radius:14px;overflow:hidden;background:#000;margin-bottom:10px;border:1px solid var(--line)}
+.session-video video{display:block;width:100%;height:auto;max-height:46vh;object-fit:contain;background:#000}
 .set-dots{display:flex;justify-content:center;gap:8px;margin:10px 0 14px}
 .set-dot{width:12px;height:12px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line)}
 .set-dot.done{background:var(--ok);border-color:var(--ok)}
