@@ -26,31 +26,6 @@ window.MUSCLE_LABELS = {
 */
 window.EXERCISES = [
   {
-    id: "knee",
-    name: "Knee Push-up",
-    emoji: "🧎",
-    level: "Beginner",
-    focus: "Whole chest · build the base",
-    defaultReps: 10,
-    desc: "The starting point. Same chest pattern as a full push-up with less load, so you can groove clean form.",
-    pose: { support: "knees", handLift: 0, footLift: 0, leanFwd: 8 },
-    hands: "shoulder",
-    steps: [
-      "Kneel on a mat and place your hands flat on the floor, slightly wider than your shoulders, fingers pointing forward.",
-      "Walk your hands forward until your shoulders are stacked over them and your body is one straight line from head to knees. Cross your ankles and lift your feet.",
-      "Brace your core and squeeze your glutes — no sagging or piking at the hips.",
-      "Bend your elbows (about 45° from your body) and lower your chest until it's a fist's height from the floor.",
-      "Press through your palms back to straight arms. That's one rep."
-    ],
-    cues: [
-      "Hips in line with shoulders — don't let them drift up.",
-      "Pivot from the knees, not the hips.",
-      "Lower under control; don't just drop.",
-      "Squeeze the chest at the top."
-    ],
-    muscles: { chest:0.8, "upper-chest":0.4, "front-delt":0.55, triceps:0.6, core:0.4 }
-  },
-  {
     id: "incline",
     img: "incline",
     name: "Incline Push-up",
