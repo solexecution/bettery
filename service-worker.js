@@ -1,5 +1,5 @@
 /* Bettery service worker — app-shell cache for offline use */
-const CACHE = "bettery-v1.4.2";
+const CACHE = "bettery-v1.4.3";
 const ASSETS = [
   ".",
   "index.html",

@@ -455,6 +455,8 @@ function openGuide(ex) {
    Active session
    =========================================================== */
 const DEFAULT_VIDEO = "img/clips/pushup.mp4";   // shown during a series unless an exercise sets its own `video`
+const DEFAULT_VIDEO_REPS = 4;                   // pushup.mp4 shows 4 full push-ups
+const REP_SECONDS = 1.5;                         // play speed so each rep lasts this long
 function startSession(ex, sets, reps, rest) {
   session = { ex, sets, reps, rest, currentSet: 1, results: [], repValue: reps, startedAt: Date.now(), resting: false };
   const sv = $("#sessionVideo"), sm = $("#sessionMap");
@@ -463,6 +465,11 @@ function startSession(ex, sets, reps, rest) {
     sv.innerHTML = `<video src="${vsrc}" autoplay loop muted playsinline preload="auto"></video>`;
     sv.classList.remove("hidden");
     sm.classList.add("hidden");
+    const vid = sv.querySelector("video");
+    const clipReps = ex.videoReps || DEFAULT_VIDEO_REPS;
+    const setRate = () => { if (vid.duration && isFinite(vid.duration) && clipReps > 0) vid.playbackRate = Math.min(8, Math.max(0.1, (vid.duration / clipReps) / REP_SECONDS)); };
+    vid.addEventListener("loadedmetadata", setRate);
+    if (vid.readyState >= 1) setRate();
   } else {
     sv.innerHTML = ""; sv.classList.add("hidden");
     sm.classList.remove("hidden");
