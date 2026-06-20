@@ -232,10 +232,20 @@ p{margin:.25rem 0}
 .fig-floor{stroke:var(--muted);stroke-width:2;stroke-dasharray:2 6;opacity:.45}
 .fig-anno{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 4;opacity:.65}
 .seg,.mus{transition:fill .3s ease,stroke .3s ease}
-.fig-hot{filter:drop-shadow(0 0 4px rgba(255,90,60,.6))}
+.body{fill:#414c66}
+.fig-hot{filter:drop-shadow(0 0 5px rgba(255,90,60,.65))}
 .elbow-arc{fill:none;stroke:#ffd166;stroke-width:2.5;stroke-linecap:round}
-.angle-txt{fill:#ffd166;font-size:13px;font-weight:800;font-family:inherit;paint-order:stroke;stroke:#0b0f17;stroke-width:3px;stroke-linejoin:round}
+.ba-arc{fill:none;stroke:#5fd0ff;stroke-width:2.5;stroke-linecap:round}
 .demo-toggle{margin-bottom:10px}
+.twopose{display:flex;flex-direction:column;gap:16px;width:100%}
+.poserow{margin:0}
+.poselabel{font-weight:700;font-size:.86rem;color:#c3cee6;margin-bottom:4px}
+.poserow .pose-stage,.poserow svg{width:100%}
+.angle-chips{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.ac{font-size:.74rem;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
+.ac-el{color:#ffd166;background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.32)}
+.ac-ba{color:#5fd0ff;background:rgba(95,208,255,.12);border-color:rgba(95,208,255,.32)}
+.emphasis{margin:12px 0 0;font-size:.85rem;line-height:1.5;color:var(--text);background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.2);border-radius:10px;padding:10px 12px}
 
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:9px}
 .steps li{padding-left:4px;line-height:1.5}

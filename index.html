@@ -135,19 +135,11 @@
         <div class="card">
           <div class="card-head"><h2>The movement</h2><span class="muted small" id="demoView">demo</span></div>
           <div class="chips demo-toggle" id="demoToggle">
-            <button class="chip chip--on" data-view="anim">Animation</button>
+            <button class="chip chip--on" data-view="anim">Diagram</button>
             <button class="chip" data-view="photo">Photo</button>
           </div>
           <div class="pose-stage" id="poseStage"></div>
-          <div class="pose-controls">
-            <button class="btn btn-ghost btn-sm" id="posePlay">▶ Play</button>
-            <input type="range" id="poseScrub" min="0" max="100" value="0" class="scrub" aria-label="movement position" />
-          </div>
-          <div class="chips" id="poseQuick">
-            <button class="chip chip--on" data-pose="top">Top</button>
-            <button class="chip" data-pose="bottom">Bottom</button>
-            <span class="muted small" id="posePhase" style="margin-left:auto"></span>
-          </div>
+          <p class="emphasis" id="emphasisNote"></p>
           <p class="demo-tip muted small" id="handNote"></p>
         </div>
 
