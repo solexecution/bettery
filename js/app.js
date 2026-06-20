@@ -292,24 +292,61 @@ function poseGeom(ex, t) {
   return { H, F, S, hip, knee, ankle, toe, E, head, handSurfaceY, footSurfaceY };
 }
 
+const BASE_BODY = "#39435c";
+function elbowAngle(g) {
+  const a = vunit(vsub(g.S, g.E)), b = vunit(vsub(g.H, g.E));
+  return Math.round(Math.acos(Math.max(-1, Math.min(1, a.x*b.x + a.y*b.y))) * 180 / Math.PI);
+}
+function muscleVal(ex, ...ms) { let v = 0; ms.forEach(m => { if ((ex.muscles[m] || 0) > v) v = ex.muscles[m] || 0; }); return v; }
+function muscleFill(ex, ...ms) { const v = muscleVal(ex, ...ms); return v >= 0.35 ? colorFor(v) : BASE_BODY; }
+function hotCls(ex, ...ms) { return muscleVal(ex, ...ms) >= 0.5 ? " fig-hot" : ""; }
+
+/* Generated side-view figure: volumetric body, worked muscles highlighted, live elbow angle. */
 function figureSVG(ex, g) {
   const P = ex.pose, n = (v) => v.toFixed(1);
   let blocks = "";
   if (P.handLift > 0) blocks += `<rect class="fig-surface" x="${n(g.H.x-34)}" y="${n(g.handSurfaceY)}" width="86" height="${n(FIG.floorY-g.handSurfaceY)}" rx="4"/>`;
   if (P.footLift > 0) { const bx = Math.max(2, g.F.x - 56); blocks += `<rect class="fig-surface" x="${n(bx)}" y="${n(g.footSurfaceY)}" width="${n(g.F.x + 42 - bx)}" height="${n(FIG.floorY-g.footSurfaceY)}" rx="4"/>`; }
+
   const leg = P.support === "knees"
-    ? `M${n(g.S.x)},${n(g.S.y)} L${n(g.knee.x)},${n(g.knee.y)} L${n(g.ankle.x)},${n(g.ankle.y)} L${n(g.toe.x)},${n(g.toe.y)}`
-    : `M${n(g.S.x)},${n(g.S.y)} L${n(g.ankle.x)},${n(g.ankle.y)} L${n(g.toe.x)},${n(g.toe.y)}`;
+    ? `M${n(g.hip.x)},${n(g.hip.y)} L${n(g.knee.x)},${n(g.knee.y)} L${n(g.ankle.x)},${n(g.ankle.y)} L${n(g.toe.x)},${n(g.toe.y)}`
+    : `M${n(g.hip.x)},${n(g.hip.y)} L${n(g.ankle.x)},${n(g.ankle.y)} L${n(g.toe.x)},${n(g.toe.y)}`;
   const lineEnd = P.support === "knees" ? g.knee : g.ankle;
-  return `<svg viewBox="0 0 ${FIG.vbW} ${FIG.vbH}" xmlns="http://www.w3.org/2000/svg" aria-label="${ex.name} side view">
+
+  // torso as a tapered polygon (chest wide -> waist narrow)
+  const u = vunit(vsub(g.hip, g.S)), pp = { x:-u.y, y:u.x };
+  const A = vadd(g.S, vmul(pp,14)), B = vadd(g.hip, vmul(pp,9)), C = vadd(g.hip, vmul(pp,-9)), D = vadd(g.S, vmul(pp,-14));
+  // "front" side (toward the hands/floor) for placing the chest/core highlights
+  let fr = { x:-u.y, y:u.x };
+  if (((g.H.x-g.S.x)*fr.x + (g.H.y-g.S.y)*fr.y) < 0) fr = { x:u.y, y:-u.x };
+  const along = (a,b,d) => ({ x:a.x+(b.x-a.x)*d, y:a.y+(b.y-a.y)*d });
+  const deg = (Math.atan2(u.y,u.x)*180/Math.PI).toFixed(1);
+  const chestC = vadd(along(g.S,g.hip,0.30), vmul(fr,7));
+  const coreC  = vadd(along(g.S,g.hip,0.64), vmul(fr,5));
+
+  // elbow angle arc + readout
+  const ang = elbowAngle(g);
+  const a1 = vunit(vsub(g.S,g.E)), a2 = vunit(vsub(g.H,g.E)), R = 14;
+  const as = vadd(g.E, vmul(a1,R)), ae = vadd(g.E, vmul(a2,R));
+  const sweep = (a1.x*a2.y - a1.y*a2.x) > 0 ? 1 : 0;
+  const bis = vunit(vadd(a1,a2)), txt = vadd(g.E, vmul(bis,-22));
+
+  return `<svg viewBox="0 0 ${FIG.vbW} ${FIG.vbH}" xmlns="http://www.w3.org/2000/svg" aria-label="${ex.name} animated side view, worked muscles highlighted">
     <line class="fig-floor" x1="6" y1="${FIG.floorY}" x2="${FIG.vbW-6}" y2="${FIG.floorY}"/>
     ${blocks}
     <line class="fig-anno" x1="${n(g.head.x)}" y1="${n(g.head.y)}" x2="${n(lineEnd.x)}" y2="${n(lineEnd.y)}"/>
-    <path class="fig-limb" d="${leg}"/>
-    <path class="fig-limb fig-torso" d="M${n(g.S.x)},${n(g.S.y)} L${n(g.hip.x)},${n(g.hip.y)}"/>
-    <path class="fig-limb" d="M${n(g.S.x)},${n(g.S.y)} L${n(g.E.x)},${n(g.E.y)} L${n(g.H.x)},${n(g.H.y)}"/>
-    <circle class="fig-head" cx="${n(g.head.x)}" cy="${n(g.head.y)}" r="${FIG.headR}"/>
-    <circle class="fig-hand" cx="${n(g.H.x)}" cy="${n(g.H.y)}" r="5"/>
+    <path class="seg" stroke="${BASE_BODY}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none" d="${leg}"/>
+    <polygon points="${n(A.x)},${n(A.y)} ${n(B.x)},${n(B.y)} ${n(C.x)},${n(C.y)} ${n(D.x)},${n(D.y)}" fill="${BASE_BODY}"/>
+    <ellipse class="mus${hotCls(ex,'core')}" cx="${n(coreC.x)}" cy="${n(coreC.y)}" rx="11" ry="6.5" transform="rotate(${deg} ${n(coreC.x)} ${n(coreC.y)})" fill="${muscleFill(ex,'core')}"/>
+    <ellipse class="mus${hotCls(ex,'chest','upper-chest')}" cx="${n(chestC.x)}" cy="${n(chestC.y)}" rx="14" ry="8.5" transform="rotate(${deg} ${n(chestC.x)} ${n(chestC.y)})" fill="${muscleFill(ex,'chest','upper-chest')}"/>
+    <line class="seg" stroke="${BASE_BODY}" stroke-width="13" stroke-linecap="round" x1="${n(g.S.x)}" y1="${n(g.S.y)}" x2="${n(g.head.x)}" y2="${n(g.head.y)}"/>
+    <circle fill="${BASE_BODY}" cx="${n(g.head.x)}" cy="${n(g.head.y)}" r="13"/>
+    <line class="seg${hotCls(ex,'triceps')}" stroke="${muscleFill(ex,'triceps')}" stroke-width="16" stroke-linecap="round" x1="${n(g.S.x)}" y1="${n(g.S.y)}" x2="${n(g.E.x)}" y2="${n(g.E.y)}"/>
+    <circle class="mus${hotCls(ex,'front-delt')}" cx="${n(g.S.x)}" cy="${n(g.S.y)}" r="9" fill="${muscleFill(ex,'front-delt')}"/>
+    <line class="seg" stroke="${BASE_BODY}" stroke-width="12" stroke-linecap="round" x1="${n(g.E.x)}" y1="${n(g.E.y)}" x2="${n(g.H.x)}" y2="${n(g.H.y)}"/>
+    <circle class="fig-hand" cx="${n(g.H.x)}" cy="${n(g.H.y)}" r="5.5"/>
+    <path class="elbow-arc" d="M${n(as.x)},${n(as.y)} A${R},${R} 0 0 ${sweep} ${n(ae.x)},${n(ae.y)}"/>
+    <text class="angle-txt" x="${n(txt.x)}" y="${n(txt.y)}" text-anchor="middle" dominant-baseline="middle">${ang}°</text>
   </svg>`;
 }
 
@@ -336,7 +373,7 @@ function handDiagramSVG(p) {
 }
 
 /* guide view state + animation */
-let pose = { ex:null, mode:"figure", t:0, dir:1, playing:false, raf:0, frame:0, photoTimer:0 };
+let pose = { ex:null, view:"anim", t:0, dir:1, playing:false, raf:0, frame:0, photoTimer:0 };
 function phaseLabel(t) { return t <= 0.08 ? "Top — arms locked out" : t >= 0.92 ? "Bottom — chest down" : "Lowering / pressing"; }
 
 /* real-photo demo: crossfade between top (0) and bottom (1) frames */
@@ -354,9 +391,10 @@ function photoPlay(on) {
 }
 function drawPose() {
   if (!pose.ex) return;
-  $("#poseStage").innerHTML = figureSVG(pose.ex, poseGeom(pose.ex, pose.t));
+  const g = poseGeom(pose.ex, pose.t);
+  $("#poseStage").innerHTML = figureSVG(pose.ex, g);
   $("#poseScrub").value = Math.round(pose.t * 100);
-  $("#posePhase").textContent = phaseLabel(pose.t);
+  $("#posePhase").textContent = phaseLabel(pose.t) + " · elbow " + elbowAngle(g) + "°";
   $$("#poseQuick [data-pose]").forEach(b => b.classList.toggle("chip--on",
     (b.dataset.pose === "top" && pose.t < 0.5) || (b.dataset.pose === "bottom" && pose.t >= 0.5)));
 }
@@ -374,9 +412,35 @@ function playPose(on) {
 }
 function stopPose() { pose.playing = false; cancelAnimationFrame(pose.raf); clearInterval(pose.photoTimer); const b = $("#posePlay"); if (b) b.textContent = "▶ Play"; }
 
+/* switch the demo between the generated animation and (if available) the real photo */
+function setDemo(view) {
+  stopPose();
+  pose.view = (view === "photo" && pose.ex.img) ? "photo" : "anim";
+  $$("#demoToggle [data-view]").forEach(b => b.classList.toggle("chip--on", b.dataset.view === pose.view));
+  const slider = $("#poseScrub");
+  if (pose.view === "photo") {
+    $("#demoView").textContent = "real photo";
+    slider.classList.add("hidden");
+    pose.frame = 0;
+    $("#poseStage").innerHTML =
+      `<div class="photo-demo">
+         <img class="pdimg" data-fr="0" src="img/exercises/${pose.ex.img}/top.jpg" alt="${pose.ex.name}, top position" decoding="async">
+         <img class="pdimg" data-fr="1" src="img/exercises/${pose.ex.img}/bottom.jpg" alt="${pose.ex.name}, bottom position" decoding="async">
+       </div>`;
+    drawPhoto();
+    photoPlay(true);
+  } else {
+    $("#demoView").textContent = "generated · muscles + elbow angle";
+    slider.classList.remove("hidden");
+    pose.t = 0; pose.dir = 1;
+    drawPose();
+    playPose(true);
+  }
+}
+
 function openGuide(ex) {
-  pose.ex = ex; pose.t = 0; pose.dir = 1; pose.playing = false; pose.frame = 0;
-  clearInterval(pose.photoTimer);
+  stopPose();
+  pose.ex = ex; pose.t = 0; pose.dir = 1; pose.frame = 0;
   $("#guideTitle").textContent = ex.name;
   $("#guideFocus").textContent = ex.focus;
   const lvl = $("#guideLevel"); lvl.textContent = ex.level; lvl.className = "lvl lvl-" + ex.level;
@@ -385,25 +449,10 @@ function openGuide(ex) {
   $("#handNote").textContent = "Hand placement: " + (HAND_NOTES[ex.hands] || "");
   const gm = $("#guideMap"); gm.innerHTML = muscleSVG(); paintMap(gm, ex.muscles);
   $("#guideMuscles").innerHTML = muscleChipsHTML(ex.muscles);
-  go("guide");                       // show the view BEFORE inserting the demo so images load
-
-  const slider = $("#poseScrub");
-  if (ex.img) {
-    pose.mode = "photo";
-    $("#demoView").textContent = "real photo";
-    slider.classList.add("hidden");
-    $("#poseStage").innerHTML =
-      `<div class="photo-demo">
-         <img class="pdimg" data-fr="0" src="img/exercises/${ex.img}/top.jpg" alt="${ex.name}, top position" decoding="async">
-         <img class="pdimg" data-fr="1" src="img/exercises/${ex.img}/bottom.jpg" alt="${ex.name}, bottom position" decoding="async">
-       </div>`;
-    drawPhoto();
-  } else {
-    pose.mode = "figure";
-    $("#demoView").textContent = "side view";
-    slider.classList.remove("hidden");
-    drawPose();
-  }
+  const photoChip = $("#demoToggle [data-view='photo']");
+  if (photoChip) photoChip.style.display = ex.img ? "" : "none";
+  go("guide");                       // show the view BEFORE inserting the demo so media loads
+  setDemo("anim");
 }
 
 /* ===========================================================
@@ -740,12 +789,13 @@ function bindEvents() {
   // exercise guide
   $("#exitGuide").addEventListener("click", () => go("train"));
   $("#guideStart").addEventListener("click", () => { if (pose.ex) openSetup(pose.ex); });
-  $("#posePlay").addEventListener("click", () => { if (pose.mode === "photo") photoPlay(!pose.playing); else playPose(!pose.playing); });
-  $("#poseScrub").addEventListener("input", (e) => { if (pose.mode !== "figure") return; playPose(false); pose.t = (+e.target.value) / 100; drawPose(); });
+  $("#posePlay").addEventListener("click", () => { if (pose.view === "photo") photoPlay(!pose.playing); else playPose(!pose.playing); });
+  $("#poseScrub").addEventListener("input", (e) => { if (pose.view !== "anim") return; playPose(false); pose.t = (+e.target.value) / 100; drawPose(); });
   $$("#poseQuick [data-pose]").forEach(b => b.addEventListener("click", () => {
-    if (pose.mode === "photo") { photoPlay(false); pose.frame = b.dataset.pose === "top" ? 0 : 1; drawPhoto(); }
+    if (pose.view === "photo") { photoPlay(false); pose.frame = b.dataset.pose === "top" ? 0 : 1; drawPhoto(); }
     else { playPose(false); pose.t = b.dataset.pose === "top" ? 0 : 1; drawPose(); }
   }));
+  $$("#demoToggle [data-view]").forEach(b => b.addEventListener("click", () => setDemo(b.dataset.view)));
 
   // history
   $("#clearHistory").addEventListener("click", async () => {
