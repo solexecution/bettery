@@ -38,3 +38,6 @@ All paths are relative, so it works at any sub-path. Add it to your phone via th
 ## Roadmap
 - Pull-ups module (next), with back/biceps muscle map.
 - Progress charts and progression suggestions.
+
+## Credits
+Exercise demonstration photos are from the [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (public domain / Unlicense), bundled under `img/exercises/` for offline use.

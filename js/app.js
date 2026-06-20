@@ -336,8 +336,22 @@ function handDiagramSVG(p) {
 }
 
 /* guide view state + animation */
-let pose = { ex:null, t:0, dir:1, playing:false, raf:0 };
+let pose = { ex:null, mode:"figure", t:0, dir:1, playing:false, raf:0, frame:0, photoTimer:0 };
 function phaseLabel(t) { return t <= 0.08 ? "Top — arms locked out" : t >= 0.92 ? "Bottom — chest down" : "Lowering / pressing"; }
+
+/* real-photo demo: crossfade between top (0) and bottom (1) frames */
+function drawPhoto() {
+  $$("#poseStage .pdimg").forEach(im => im.classList.toggle("is-on", +im.dataset.fr === pose.frame));
+  $("#posePhase").textContent = pose.frame === 0 ? "Top — arms extended" : "Bottom — chest down";
+  $$("#poseQuick [data-pose]").forEach(b => b.classList.toggle("chip--on",
+    (b.dataset.pose === "top" && pose.frame === 0) || (b.dataset.pose === "bottom" && pose.frame === 1)));
+}
+function photoPlay(on) {
+  pose.playing = on; clearInterval(pose.photoTimer);
+  const btn = $("#posePlay");
+  if (on) { pose.photoTimer = setInterval(() => { pose.frame = pose.frame ? 0 : 1; drawPhoto(); }, 1100); if (btn) btn.textContent = "⏸ Pause"; }
+  else if (btn) btn.textContent = "▶ Play";
+}
 function drawPose() {
   if (!pose.ex) return;
   $("#poseStage").innerHTML = figureSVG(pose.ex, poseGeom(pose.ex, pose.t));
@@ -358,21 +372,38 @@ function playPose(on) {
   if (on) { pose.raf = requestAnimationFrame(stepPose); if (btn) btn.textContent = "⏸ Pause"; }
   else if (btn) btn.textContent = "▶ Play";
 }
-function stopPose() { pose.playing = false; cancelAnimationFrame(pose.raf); const b = $("#posePlay"); if (b) b.textContent = "▶ Play"; }
+function stopPose() { pose.playing = false; cancelAnimationFrame(pose.raf); clearInterval(pose.photoTimer); const b = $("#posePlay"); if (b) b.textContent = "▶ Play"; }
 
 function openGuide(ex) {
-  pose.ex = ex; pose.t = 0; pose.dir = 1; pose.playing = false;
+  pose.ex = ex; pose.t = 0; pose.dir = 1; pose.playing = false; pose.frame = 0;
+  clearInterval(pose.photoTimer);
   $("#guideTitle").textContent = ex.name;
   $("#guideFocus").textContent = ex.focus;
   const lvl = $("#guideLevel"); lvl.textContent = ex.level; lvl.className = "lvl lvl-" + ex.level;
   $("#guideSteps").innerHTML = ex.steps.map(s => `<li>${s}</li>`).join("");
   $("#guideKeys").innerHTML = ex.cues.map(c => `<li>${c}</li>`).join("");
-  $("#handDiagram").innerHTML = handDiagramSVG(ex.hands);
-  $("#handNote").textContent = HAND_NOTES[ex.hands] || "";
+  $("#handNote").textContent = "Hand placement: " + (HAND_NOTES[ex.hands] || "");
   const gm = $("#guideMap"); gm.innerHTML = muscleSVG(); paintMap(gm, ex.muscles);
   $("#guideMuscles").innerHTML = muscleChipsHTML(ex.muscles);
-  go("guide");
-  drawPose();
+  go("guide");                       // show the view BEFORE inserting the demo so images load
+
+  const slider = $("#poseScrub");
+  if (ex.img) {
+    pose.mode = "photo";
+    $("#demoView").textContent = "real photo";
+    slider.classList.add("hidden");
+    $("#poseStage").innerHTML =
+      `<div class="photo-demo">
+         <img class="pdimg" data-fr="0" src="img/exercises/${ex.img}/top.jpg" alt="${ex.name}, top position" decoding="async">
+         <img class="pdimg" data-fr="1" src="img/exercises/${ex.img}/bottom.jpg" alt="${ex.name}, bottom position" decoding="async">
+       </div>`;
+    drawPhoto();
+  } else {
+    pose.mode = "figure";
+    $("#demoView").textContent = "side view";
+    slider.classList.remove("hidden");
+    drawPose();
+  }
 }
 
 /* ===========================================================
@@ -709,9 +740,12 @@ function bindEvents() {
   // exercise guide
   $("#exitGuide").addEventListener("click", () => go("train"));
   $("#guideStart").addEventListener("click", () => { if (pose.ex) openSetup(pose.ex); });
-  $("#posePlay").addEventListener("click", () => playPose(!pose.playing));
-  $("#poseScrub").addEventListener("input", (e) => { playPose(false); pose.t = (+e.target.value) / 100; drawPose(); });
-  $$("#poseQuick [data-pose]").forEach(b => b.addEventListener("click", () => { playPose(false); pose.t = b.dataset.pose === "top" ? 0 : 1; drawPose(); }));
+  $("#posePlay").addEventListener("click", () => { if (pose.mode === "photo") photoPlay(!pose.playing); else playPose(!pose.playing); });
+  $("#poseScrub").addEventListener("input", (e) => { if (pose.mode !== "figure") return; playPose(false); pose.t = (+e.target.value) / 100; drawPose(); });
+  $$("#poseQuick [data-pose]").forEach(b => b.addEventListener("click", () => {
+    if (pose.mode === "photo") { photoPlay(false); pose.frame = b.dataset.pose === "top" ? 0 : 1; drawPhoto(); }
+    else { playPose(false); pose.t = b.dataset.pose === "top" ? 0 : 1; drawPose(); }
+  }));
 
   // history
   $("#clearHistory").addEventListener("click", async () => {

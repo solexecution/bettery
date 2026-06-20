@@ -52,6 +52,7 @@ window.EXERCISES = [
   },
   {
     id: "incline",
+    img: "incline",
     name: "Incline Push-up",
     emoji: "📐",
     level: "Beginner",
@@ -77,6 +78,7 @@ window.EXERCISES = [
   },
   {
     id: "standard",
+    img: "standard",
     name: "Standard Push-up",
     emoji: "💪",
     level: "Intermediate",
@@ -102,6 +104,7 @@ window.EXERCISES = [
   },
   {
     id: "wide",
+    img: "wide",
     name: "Wide Push-up",
     emoji: "↔️",
     level: "Intermediate",
@@ -127,6 +130,7 @@ window.EXERCISES = [
   },
   {
     id: "diamond",
+    img: "diamond",
     name: "Diamond Push-up",
     emoji: "🔻",
     level: "Intermediate",
@@ -152,6 +156,7 @@ window.EXERCISES = [
   },
   {
     id: "decline",
+    img: "decline",
     name: "Decline Push-up",
     emoji: "🛫",
     level: "Advanced",
