@@ -278,14 +278,15 @@ function poseGeom(ex, t) {
   const u = vunit(vsub(F, S));                                 // shoulder -> foot (down the spine)
   const hip = vadd(S, vmul(u, FIG.Lt));
   let knee, ankle, toe;
+  const up = vunit(vsub(S, F)); // from the foot up the body toward the head
   if (P.support === "knees") {
-    knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));
-    ankle = { x:knee.x - FIG.Lsh*0.85, y:footSurfaceY };
-    toe = { x:ankle.x - 8, y:footSurfaceY - 6 };
+    knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));   // knee is the planted pivot on the floor
+    ankle = vadd(knee, { x: 5, y: -24 });         // shins lift up behind (feet off the floor)
+    toe   = vadd(ankle, { x: 9, y: -7 });
   } else {
     knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));
-    ankle = vadd(S, vmul(u, bodyLen));
-    toe = { x:ankle.x + FIG.foot, y:footSurfaceY };
+    toe   = { x: F.x, y: footSurfaceY };          // ball of the foot planted on the floor
+    ankle = vadd(toe, vmul(up, FIG.foot));        // ankle lifts up the body line → heel raised, toes pointing back
   }
   const E = elbowIK(S, H, FIG.Lua, FIG.Lfa);
   const head = vadd(S, vmul(vunit(vsub(S, F)), FIG.neck + FIG.headR));
@@ -345,9 +346,6 @@ function figureSVG(ex, g) {
   const chestC = vadd(along(g.S,g.hip,0.27), vmul(fr,8));
   const coreC  = vadd(along(g.S,g.hip,0.60), vmul(fr,6));
 
-  const a1 = vunit(vsub(g.S,g.E)), a2 = vunit(vsub(g.H,g.E));
-  const elArc = arcPath(g.E, a1, a2, 15);
-
   return `<svg viewBox="0 0 ${FIG.vbW} ${FIG.vbH}" xmlns="http://www.w3.org/2000/svg" aria-label="${ex.name} side view, worked muscles highlighted">
     <line class="fig-floor" x1="6" y1="${FIG.floorY}" x2="${FIG.vbW-6}" y2="${FIG.floorY}"/>
     ${blocks}
@@ -363,7 +361,6 @@ function figureSVG(ex, g) {
     <ellipse class="mus${hotCls(ex,'front-delt')}" cx="${n(g.S.x)}" cy="${n(g.S.y)}" rx="10.5" ry="9.5" fill="${muscleFill(ex,'front-delt')}"/>
     <path class="body" d="${fore}"/>
     <ellipse class="fig-hand" cx="${n(g.H.x)}" cy="${n(g.H.y)}" rx="6.5" ry="3.6" transform="rotate(${deg} ${n(g.H.x)} ${n(g.H.y)})"/>
-    <path class="elbow-arc" d="${elArc}"/>
   </svg>`;
 }
 
@@ -410,16 +407,19 @@ function handDiagramSVG(p) {
 let pose = { ex:null, view:"anim" };
 function stopPose() {}   // no running animation any more; kept so go() can call it safely
 
-function poseBlock(label, g, ex) {
+function poseBlock(label, g, ex, cue) {
   return `<figure class="poserow">
-    <div class="poselabel">${label}</div>
+    <div class="poselabel">${label}<span class="ac ac-el">elbow ${elbowAngle(g)}°</span></div>
     ${figureSVG(ex, g)}
-    <div class="angle-chips"><span class="ac ac-el">elbow bend ${elbowAngle(g)}°</span><span class="ac ac-ba">arm↔body ${FLARE[ex.id] || 45}°</span></div>
+    <p class="posecue">${cue}</p>
   </figure>`;
 }
 function renderDiagram(ex) {
+  const base = ex.pose.support === "knees" ? "head to knees" : "head to heels";
+  const topCue = `Start at the top: arms straight, body in one line (${base}). Brace your core and squeeze your glutes.`;
+  const botCue = `Bend your elbows about ${FLARE[ex.id] || 45}° from your body and lower your chest until it's a fist's height from the floor — then press back up.`;
   $("#poseStage").innerHTML =
-    `<div class="twopose">${poseBlock("① Top — start", poseGeom(ex,0), ex)}${poseBlock("② Bottom", poseGeom(ex,1), ex)}</div>`;
+    `<div class="twopose">${poseBlock("① Top — start", poseGeom(ex,0), ex, topCue)}${poseBlock("② Bottom", poseGeom(ex,1), ex, botCue)}</div>`;
 }
 function renderPhotos(ex) {
   const ph = (lbl, fr) => `<figure class="poserow"><div class="poselabel">${lbl}</div><div class="photo-demo"><img class="pdimg is-on" src="img/exercises/${ex.img}/${fr}.jpg" alt="${ex.name} ${lbl}" decoding="async"></div></figure>`;

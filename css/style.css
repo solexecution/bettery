@@ -229,7 +229,7 @@ p{margin:.25rem 0}
 .fig-head{fill:#c3cee6}
 .fig-hand{fill:#eef2fb;stroke:#0b0f17;stroke-width:1}
 .fig-surface{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
-.fig-floor{stroke:var(--muted);stroke-width:2;stroke-dasharray:2 6;opacity:.45}
+.fig-floor{stroke:var(--muted);stroke-width:1.5;opacity:.22}
 .fig-anno{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 4;opacity:.65}
 .seg,.mus{transition:fill .3s ease,stroke .3s ease}
 .body{fill:#414c66}
@@ -239,8 +239,10 @@ p{margin:.25rem 0}
 .demo-toggle{margin-bottom:10px}
 .twopose{display:flex;flex-direction:column;gap:16px;width:100%}
 .poserow{margin:0}
-.poselabel{font-weight:700;font-size:.86rem;color:#c3cee6;margin-bottom:4px}
+.poselabel{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:.86rem;color:#c3cee6;margin-bottom:4px}
+.poselabel .ac{font-weight:700}
 .poserow .pose-stage,.poserow svg{width:100%}
+.posecue{margin:6px 2px 0;font-size:.85rem;line-height:1.45;color:#b9c4dd}
 .angle-chips{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
 .ac{font-size:.74rem;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
 .ac-el{color:#ffd166;background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.32)}
