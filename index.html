@@ -46,19 +46,6 @@
           </div>
           <button class="btn btn-primary" data-go="train">Start training →</button>
         </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h2>Chest focus</h2>
-            <span class="muted small">muscles you'll hit</span>
-          </div>
-          <div class="map-wrap small-map" id="homeMap"></div>
-          <div class="legend">
-            <span><i class="dot dot-prime"></i> Primary</span>
-            <span><i class="dot dot-sec"></i> Secondary</span>
-            <span><i class="dot dot-base"></i> Resting</span>
-          </div>
-        </div>
       </section>
 
       <!-- Train -->
@@ -88,7 +75,6 @@
         </div>
 
         <div class="session-video hidden" id="sessionVideo"></div>
-        <div class="map-wrap" id="sessionMap"></div>
         <div class="muscle-chips" id="sessionMuscles"></div>
 
         <div class="set-dots" id="setDots"></div>
@@ -135,10 +121,6 @@
 
         <div class="card">
           <div class="card-head"><h2>The movement</h2><span class="muted small" id="demoView">demo</span></div>
-          <div class="chips demo-toggle" id="demoToggle">
-            <button class="chip chip--on" data-view="anim">Diagram</button>
-            <button class="chip" data-view="photo">Photo</button>
-          </div>
           <div class="pose-stage" id="poseStage"></div>
           <p class="emphasis" id="emphasisNote"></p>
           <p class="demo-tip muted small" id="handNote"></p>
@@ -156,9 +138,7 @@
 
         <div class="card">
           <div class="card-head"><h2>Muscles worked</h2></div>
-          <div class="map-wrap small-map" id="guideMap"></div>
           <div class="muscle-chips" id="guideMuscles"></div>
-          <div class="legend"><span><i class="dot dot-prime"></i> Primary</span><span><i class="dot dot-sec"></i> Secondary</span></div>
         </div>
 
         <button class="btn btn-primary btn-big" id="guideStart" style="margin-bottom:10px">Start this workout →</button>

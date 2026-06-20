@@ -151,9 +151,6 @@ function renderHome() {
   const part = hr < 12 ? "Morning" : hr < 18 ? "Afternoon" : "Evening";
   $("#homeGreeting").textContent = `Good ${part}. Let's build that chest. 💥`;
   $("#qsHint").textContent = `${state.settings.sets} sets · pick a variation to begin`;
-  const hm = $("#homeMap");
-  if (!hm.dataset.ready) { hm.innerHTML = muscleSVG(); hm.dataset.ready = "1"; }
-  paintMap(hm, chestOverview());
 }
 
 /* ===========================================================
@@ -434,8 +431,7 @@ function setDemo(view) {
 }
 
 function openGuide(ex) {
-  stopPose();
-  pose.ex = ex; pose.t = 0; pose.dir = 1; pose.frame = 0;
+  pose.ex = ex;
   $("#guideTitle").textContent = ex.name;
   $("#guideFocus").textContent = ex.focus;
   const lvl = $("#guideLevel"); lvl.textContent = ex.level; lvl.className = "lvl lvl-" + ex.level;
@@ -443,12 +439,10 @@ function openGuide(ex) {
   $("#guideKeys").innerHTML = ex.cues.map(c => `<li>${c}</li>`).join("");
   $("#handNote").textContent = "Hand placement: " + (HAND_NOTES[ex.hands] || "");
   $("#emphasisNote").innerHTML = emphasisNote(ex);
-  const gm = $("#guideMap"); gm.innerHTML = muscleSVG(); paintMap(gm, ex.muscles);
   $("#guideMuscles").innerHTML = muscleChipsHTML(ex.muscles);
-  const photoChip = $("#demoToggle [data-view='photo']");
-  if (photoChip) photoChip.style.display = ex.img ? "" : "none";
-  go("guide");                       // show the view BEFORE inserting the demo so media loads
-  setDemo("anim");
+  go("guide");                       // show the view BEFORE inserting the photos so they load
+  if (ex.img) { $("#demoView").textContent = "real photos · top & bottom"; renderPhotos(ex); }
+  else { $("#demoView").textContent = ""; $("#poseStage").innerHTML = `<p class="muted small" style="text-align:center;padding:18px 8px">The form demo plays during the workout.</p>`; }
 }
 
 /* ===========================================================
@@ -459,12 +453,11 @@ const DEFAULT_VIDEO_REPS = 4;                   // pushup.mp4 shows 4 full push-
 const REP_SECONDS = 1.5;                         // play speed so each rep lasts this long
 function startSession(ex, sets, reps, rest) {
   session = { ex, sets, reps, rest, currentSet: 1, results: [], repValue: reps, startedAt: Date.now(), resting: false };
-  const sv = $("#sessionVideo"), sm = $("#sessionMap");
+  const sv = $("#sessionVideo");
   const vsrc = ex.video || DEFAULT_VIDEO;
   if (vsrc) {
     sv.innerHTML = `<video src="${vsrc}" autoplay loop muted playsinline preload="auto"></video>`;
     sv.classList.remove("hidden");
-    sm.classList.add("hidden");
     const vid = sv.querySelector("video");
     const clipReps = ex.videoReps || DEFAULT_VIDEO_REPS;
     const setRate = () => { if (vid.duration && isFinite(vid.duration) && clipReps > 0) vid.playbackRate = Math.min(8, Math.max(0.1, (vid.duration / clipReps) / REP_SECONDS)); };
@@ -472,9 +465,6 @@ function startSession(ex, sets, reps, rest) {
     if (vid.readyState >= 1) setRate();
   } else {
     sv.innerHTML = ""; sv.classList.add("hidden");
-    sm.classList.remove("hidden");
-    if (!sm.dataset.ready) { sm.innerHTML = muscleSVG(); sm.dataset.ready = "1"; }
-    paintMap(sm, ex.muscles);
   }
   $("#sessionTitle").textContent = ex.name;
   $("#sessionFocus").textContent = ex.focus;
@@ -802,7 +792,6 @@ function bindEvents() {
   // exercise guide
   $("#exitGuide").addEventListener("click", () => go("train"));
   $("#guideStart").addEventListener("click", () => { if (pose.ex) openSetup(pose.ex); });
-  $$("#demoToggle [data-view]").forEach(b => b.addEventListener("click", () => setDemo(b.dataset.view)));
 
   // history
   $("#clearHistory").addEventListener("click", async () => {
