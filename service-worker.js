@@ -1,5 +1,5 @@
 /* Bettery service worker — app-shell cache for offline use */
-const CACHE = "bettery-v1.5.0";
+const CACHE = "bettery-v1.6.0";
 const ASSETS = [
   ".",
   "index.html",
@@ -11,7 +11,6 @@ const ASSETS = [
   "icons/icon-512.png",
   "img/clips/pushup.mp4",
   "img/exercises/standard/top.jpg", "img/exercises/standard/bottom.jpg",
-  "img/exercises/incline/top.jpg",  "img/exercises/incline/bottom.jpg",
   "img/exercises/decline/top.jpg",  "img/exercises/decline/bottom.jpg",
   "img/exercises/wide/top.jpg",     "img/exercises/wide/bottom.jpg",
   "img/exercises/diamond/top.jpg",  "img/exercises/diamond/bottom.jpg"

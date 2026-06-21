@@ -114,7 +114,6 @@ p{margin:.25rem 0}
 .tag{font-size:.68rem;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
 .tag-prime{background:rgba(255,59,48,.16);color:#ff8b84;border-color:rgba(255,59,48,.3)}
 .lvl{font-size:.66rem;font-weight:700;padding:3px 8px;border-radius:999px;flex-shrink:0}
-.lvl-Beginner{background:rgba(39,192,138,.16);color:#5fe0b3}
 .lvl-Intermediate{background:rgba(255,176,32,.16);color:#ffc864}
 .lvl-Advanced{background:rgba(255,71,87,.16);color:#ff8b94}
 

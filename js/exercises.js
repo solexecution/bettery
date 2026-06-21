@@ -26,32 +26,6 @@ window.MUSCLE_LABELS = {
 */
 window.EXERCISES = [
   {
-    id: "incline",
-    img: "incline",
-    name: "Incline Push-up",
-    emoji: "📐",
-    level: "Beginner",
-    focus: "Lower chest · easier load",
-    defaultReps: 12,
-    desc: "Hands raised on a bench, step or table. Easier than the floor and biases the lower pec.",
-    pose: { support: "toes", handLift: 42, footLift: 0, leanFwd: 8 },
-    hands: "shoulder",
-    steps: [
-      "Place your hands slightly wider than shoulders on a stable raised surface — a bench, step or sturdy table.",
-      "Walk your feet back until your body is one straight line from head to heels, leaning into the surface on the balls of your feet.",
-      "Keep your core tight and your elbows tucked to about 45°.",
-      "Lower your chest to the edge of the surface under control (about 2 seconds down).",
-      "Press back up to fully straight arms. The higher the surface, the easier — lower it as you get stronger."
-    ],
-    cues: [
-      "Body straight — don't bend at the hips.",
-      "Higher hands = easier; progress toward the floor.",
-      "Full range: chest to the surface each rep.",
-      "Keep the neck neutral, eyes down."
-    ],
-    muscles: { chest:0.75, "upper-chest":0.3, "front-delt":0.5, triceps:0.65, core:0.45 }
-  },
-  {
     id: "standard",
     img: "standard",
     name: "Standard Push-up",

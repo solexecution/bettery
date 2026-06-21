@@ -4,7 +4,7 @@
    =========================================================== */
 "use strict";
 
-const VERSION = "1.5.0";
+const VERSION = "1.6.0";
 const KEY = "bettery.v1";
 
 /* ---------- tiny DOM helpers ---------- */
@@ -172,7 +172,7 @@ function openSetup(ex) {
 /* elbow flare = angle the upper arms make with the torso (from above). This is what shifts
    the load between triceps (tucked) and chest (flared) — it's a top-down angle, so it's shown
    as a value rather than drawn on the side view. */
-const FLARE = { knee:45, incline:45, standard:45, wide:75, diamond:20, decline:45, archer:55, pseudo:30 };
+const FLARE = { standard:45, wide:75, diamond:20, decline:45, archer:55, pseudo:30 };
 const EMPHASIS = {
   shoulder: "a balanced chest + triceps load.",
   wide:     "the wide flare biases the outer chest and front delts.",
