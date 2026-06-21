@@ -456,7 +456,7 @@ function startSession(ex, sets, reps, rest) {
   const sv = $("#sessionVideo");
   const vsrc = ex.video || DEFAULT_VIDEO;
   if (vsrc) {
-    sv.innerHTML = `<video src="${vsrc}" autoplay loop muted playsinline preload="auto"></video>`;
+    sv.innerHTML = `<video src="${vsrc}" autoplay loop muted playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback" preload="auto"></video>`;
     sv.classList.remove("hidden");
     const vid = sv.querySelector("video");
     const clipReps = ex.videoReps || DEFAULT_VIDEO_REPS;
