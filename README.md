@@ -1,12 +1,12 @@
 # Bettery 💪 — Chest Trainer PWA
 
 An installable, offline-capable Progressive Web App for chest-focused calisthenics.
-Starts with **push-ups**: pick a variation, see exactly which muscles it hits on a live
-body map, track your sets/reps with a rest timer, and get a notification when rest is over.
+Starts with **push-ups**: pick a variation, see which muscles it targets and how to do it,
+track your sets/reps with a rest timer, and get a notification when rest is over.
 
 ## Features
-- **8 push-up variations** — knee, incline, standard, wide, diamond, decline, archer, pseudo-planche.
-- **Live muscle map** — each variation highlights the worked muscles (upper / mid-lower / inner chest, front delts, triceps, serratus, core) by intensity.
+- **7 push-up variations** — incline, standard, wide, diamond, decline, archer, pseudo-planche.
+- **Muscle targeting + form guide** — each variation ranks the worked muscles (upper / mid-lower / inner chest, front delts, triceps, serratus, core) by emphasis, with a top & bottom form reference (photos, or a looping clip for archer / pseudo-planche).
 - **Set + rep tracking** — adjustable sets, reps and rest; per-set rep logging; workout history with streak, totals and best set.
 - **Rest timer** — animated countdown ring, beep + notification when it ends, skip / +15s controls.
 - **Notifications** — rest-over alerts and an optional daily training reminder.

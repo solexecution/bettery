@@ -4,74 +4,13 @@
    =========================================================== */
 "use strict";
 
-const VERSION = "1.0.0";
+const VERSION = "1.5.0";
 const KEY = "bettery.v1";
 
 /* ---------- tiny DOM helpers ---------- */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
-
-/* ===========================================================
-   Body muscle map (front view, built from a mirrored half)
-   =========================================================== */
-const BODY_HALF = `
-  <path class="silhouette" d="M120,50 L134,52 C150,54 161,60 173,74 C187,87 191,101 189,119 L185,169 L182,214 L169,214 L170,170 L150,118 C144,115 140,115 137,121 C143,148 140,176 132,206 L120,210 Z"/>
-`;
-
-const MUS_HALF = `
-  <path data-muscle="traps"       d="M122,55 L134,58 C149,60 159,66 169,75 L160,78 C150,69 136,63 122,63 Z"/>
-  <path data-muscle="front-delt"  d="M150,72 C167,67 183,78 187,99 C189,111 181,117 169,113 C157,107 150,93 150,72 Z"/>
-  <path data-muscle="triceps"     d="M187,101 C191,119 189,151 184,167 L181,167 C183,140 182,113 181,103 Z"/>
-  <path data-muscle="biceps"      d="M170,113 C179,118 183,141 181,161 L173,163 C170,140 168,119 170,113 Z"/>
-  <path data-muscle="forearm"     d="M170,167 C181,169 183,201 181,213 L170,214 L170,168 Z"/>
-  <path data-muscle="upper-chest" d="M122,72 L147,78 C151,80 151,87 148,91 L122,91 Z"/>
-  <path data-muscle="chest"       d="M122,93 L148,93 C150,105 146,115 138,119 C130,122 124,120 122,117 Z"/>
-  <path data-muscle="serratus"    d="M127,123 L136,121 L136,125 L128,127 Z M128,129 L136,127 L136,131 L129,134 Z"/>
-  <path data-muscle="oblique"     d="M133,123 C141,148 139,176 132,202 L127,201 C129,172 127,144 127,125 Z"/>
-`;
-
-const CENTER = `
-  <circle class="bodypart" cx="120" cy="32" r="22"/>
-  <path class="bodypart" d="M109,50 L131,50 L129,66 L111,66 Z"/>
-  <rect data-muscle="core" x="108" y="124" width="24" height="72" rx="10"/>
-  <line class="ab-line" x1="120" y1="130" x2="120" y2="190"/>
-  <line class="ab-line" x1="110" y1="146" x2="130" y2="146"/>
-  <line class="ab-line" x1="110" y1="162" x2="130" y2="162"/>
-  <line class="ab-line" x1="110" y1="178" x2="130" y2="178"/>
-`;
-
-function muscleSVG() {
-  return `
-  <svg viewBox="0 0 240 234" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Front body muscle map">
-    <g class="layer-body">${BODY_HALF}<g transform="matrix(-1 0 0 1 240 0)">${BODY_HALF}</g></g>
-    <g class="layer-mus">${MUS_HALF}<g transform="matrix(-1 0 0 1 240 0)">${MUS_HALF}</g></g>
-    <g class="layer-center">${CENTER}</g>
-  </svg>`;
-}
-
-function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
-function colorFor(intensity) {
-  const t = Math.max(0, Math.min(1, (intensity - 0.3) / 0.7));   // amber -> red over 0.3..1
-  const lo = [255, 176, 32], hi = [255, 59, 48];
-  return `rgb(${lerp(lo[0], hi[0], t)},${lerp(lo[1], hi[1], t)},${lerp(lo[2], hi[2], t)})`;
-}
-
-function paintMap(container, muscleMap) {
-  const svg = $("svg", container);
-  if (!svg) return;
-  $$("[data-muscle]", svg).forEach(p => { p.style.fill = ""; p.classList.remove("active"); });
-  Object.entries(muscleMap || {}).forEach(([m, v]) => {
-    $$(`[data-muscle="${m}"]`, svg).forEach(p => { p.style.fill = colorFor(v); p.classList.add("active"); });
-  });
-}
-
-/* Combined map of every chest exercise's primary muscles, for the home preview */
-function chestOverview() {
-  const out = {};
-  EXERCISES.forEach(ex => Object.entries(ex.muscles).forEach(([m, v]) => { out[m] = Math.max(out[m] || 0, v); }));
-  return out;
-}
 
 function muscleChipsHTML(muscleMap) {
   return Object.entries(muscleMap)
@@ -126,8 +65,8 @@ function computeStats() {
    Navigation
    =========================================================== */
 function go(view) {
-  stopPose();
   if (view !== "session") { const sv = $("#sessionVideo"); if (sv) sv.innerHTML = ""; }  // stop the demo clip
+  if (view !== "guide")   { const gv = $("#poseStage video"); if (gv) gv.pause(); }       // pause the guide clip
   $$(".view").forEach(v => v.classList.remove("view--active"));
   $(`#view-${view}`).classList.add("view--active");
   $$(".nav-btn").forEach(b => b.classList.toggle("nav--on", b.dataset.view === view));
@@ -230,138 +169,6 @@ function openSetup(ex) {
   };
 }
 
-/* ===========================================================
-   Exercise guide — parameterized side-view figure engine
-   =========================================================== */
-const FIG = { Lua:26, Lfa:26, Lt:52, Lth:50, Lsh:48, headR:12, neck:9, foot:14, floorY:168, handX:190, vbW:300, vbH:196 };
-const vadd = (a, b) => ({ x:a.x+b.x, y:a.y+b.y });
-const vsub = (a, b) => ({ x:a.x-b.x, y:a.y-b.y });
-const vmul = (a, s) => ({ x:a.x*s, y:a.y*s });
-const vunit = (a) => { const d = Math.hypot(a.x, a.y) || 1; return { x:a.x/d, y:a.y/d }; };
-function armReach(t) { return (0.96 - 0.48 * t) * (FIG.Lua + FIG.Lfa); }
-
-function circleInt(c1, r1, c2, r2, upper) {
-  const dx = c2.x-c1.x, dy = c2.y-c1.y, d = Math.hypot(dx, dy);
-  if (d > r1+r2 || d < Math.abs(r1-r2) || d === 0) return null;
-  const a = (r1*r1 - r2*r2 + d*d) / (2*d), h2 = r1*r1 - a*a;
-  if (h2 < 0) return null;
-  const h = Math.sqrt(h2), xm = c1.x + a*dx/d, ym = c1.y + a*dy/d, rx = -dy*(h/d), ry = dx*(h/d);
-  const s1 = { x:xm+rx, y:ym+ry }, s2 = { x:xm-rx, y:ym-ry };
-  return upper ? (s1.y < s2.y ? s1 : s2) : (s1.y > s2.y ? s1 : s2);
-}
-
-function elbowIK(S, H, Lua, Lfa) {
-  const dx = H.x-S.x, dy = H.y-S.y, d = Math.hypot(dx, dy) || 0.01;
-  if (d >= Lua+Lfa-0.5) return vadd(S, vmul(vunit({ x:dx, y:dy }), Lua));
-  const a = (Lua*Lua - Lfa*Lfa + d*d) / (2*d), h = Math.sqrt(Math.max(0, Lua*Lua - a*a));
-  const xm = S.x + a*dx/d, ym = S.y + a*dy/d;
-  const e1 = { x:xm - dy*(h/d), y:ym + dx*(h/d) }, e2 = { x:xm + dy*(h/d), y:ym - dx*(h/d) };
-  return e1.x < e2.x ? e1 : e2;   // elbow points back toward the feet
-}
-
-function poseGeom(ex, t) {
-  const P = ex.pose;
-  const handSurfaceY = FIG.floorY - (P.handLift || 0);
-  const footSurfaceY = FIG.floorY - (P.footLift || 0);
-  const H = { x:FIG.handX, y:handSurfaceY };
-  const bodyLen = P.support === "knees" ? (FIG.Lt + FIG.Lth) : (FIG.Lt + FIG.Lth + FIG.Lsh);
-  const fwd = P.leanFwd || 8, Rtop = armReach(0);
-  const Stop = { x:H.x + fwd, y:H.y - Math.sqrt(Math.max(1, Rtop*Rtop - fwd*fwd)) };
-  const dyF = Math.min(footSurfaceY - Stop.y, bodyLen - 1);
-  const dxF = Math.sqrt(Math.max(1, bodyLen*bodyLen - dyF*dyF));
-  const F = { x:Stop.x - dxF, y:footSurfaceY };               // foot pivot stays planted
-  // shoulder = where the planted body (circle around F) meets the planted arm (circle around H);
-  // if full bend is geometrically out of reach (raised hands / big lean), bend as far as possible.
-  const S = circleInt(F, bodyLen, H, armReach(t), true) || vadd(F, vmul(vunit(vsub(H, F)), bodyLen));
-  const u = vunit(vsub(F, S));                                 // shoulder -> foot (down the spine)
-  const hip = vadd(S, vmul(u, FIG.Lt));
-  let knee, ankle, toe;
-  const up = vunit(vsub(S, F)); // from the foot up the body toward the head
-  if (P.support === "knees") {
-    knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));   // knee is the planted pivot on the floor
-    ankle = vadd(knee, { x: 5, y: -24 });         // shins lift up behind (feet off the floor)
-    toe   = vadd(ankle, { x: 9, y: -7 });
-  } else {
-    knee = vadd(S, vmul(u, FIG.Lt + FIG.Lth));
-    toe   = { x: F.x, y: footSurfaceY };          // ball of the foot planted on the floor
-    ankle = vadd(toe, vmul(up, FIG.foot));        // ankle lifts up the body line → heel raised, toes pointing back
-  }
-  const E = elbowIK(S, H, FIG.Lua, FIG.Lfa);
-  const head = vadd(S, vmul(vunit(vsub(S, F)), FIG.neck + FIG.headR));
-  return { H, F, S, hip, knee, ankle, toe, E, head, handSurfaceY, footSurfaceY };
-}
-
-const BODY_FILL = "#414c66";
-function elbowAngle(g) {
-  const a = vunit(vsub(g.S, g.E)), b = vunit(vsub(g.H, g.E));
-  return Math.round(Math.acos(Math.max(-1, Math.min(1, a.x*b.x + a.y*b.y))) * 180 / Math.PI);
-}
-function bodyArmAngle(g) {
-  const a = vunit(vsub(g.hip, g.S)), b = vunit(vsub(g.E, g.S));
-  return Math.round(Math.acos(Math.max(-1, Math.min(1, a.x*b.x + a.y*b.y))) * 180 / Math.PI);
-}
-function muscleVal(ex, ...ms) { let v = 0; ms.forEach(m => { if ((ex.muscles[m] || 0) > v) v = ex.muscles[m] || 0; }); return v; }
-function muscleFill(ex, ...ms) { const v = muscleVal(ex, ...ms); return v >= 0.35 ? colorFor(v) : BODY_FILL; }
-function hotCls(ex, ...ms) { return muscleVal(ex, ...ms) >= 0.5 ? " fig-hot" : ""; }
-
-/* a tapered "muscle" shape between two joints, with a mid bulge (bias offsets the belly to one side) */
-function lp(A, B, wA, wM, wB, bias) {
-  bias = bias || { x:0, y:0 };
-  const dir = vunit(vsub(B, A)), pe = { x:-dir.y, y:dir.x }, M = { x:(A.x+B.x)/2, y:(A.y+B.y)/2 }, n = v => v.toFixed(1);
-  const a1 = vadd(A, vmul(pe, wA/2)), a2 = vadd(A, vmul(pe, -wA/2));
-  const b1 = vadd(B, vmul(pe, wB/2)), b2 = vadd(B, vmul(pe, -wB/2));
-  const m1 = vadd(vadd(M, vmul(pe, wM/2)), bias), m2 = vadd(vadd(M, vmul(pe, -wM/2)), bias);
-  const capB = vadd(B, vmul(dir, Math.max(wB,3)/2)), capA = vadd(A, vmul(dir, -Math.max(wA,3)/2));
-  return `M${n(a1.x)},${n(a1.y)} Q${n(m1.x)},${n(m1.y)} ${n(b1.x)},${n(b1.y)} Q${n(capB.x)},${n(capB.y)} ${n(b2.x)},${n(b2.y)} Q${n(m2.x)},${n(m2.y)} ${n(a2.x)},${n(a2.y)} Q${n(capA.x)},${n(capA.y)} ${n(a1.x)},${n(a1.y)} Z`;
-}
-function arcPath(C, v1, v2, R) {
-  const n = v => v.toFixed(1), s = vadd(C, vmul(v1, R)), e = vadd(C, vmul(v2, R));
-  const sweep = (v1.x*v2.y - v1.y*v2.x) > 0 ? 1 : 0;
-  return `M${n(s.x)},${n(s.y)} A${R},${R} 0 0 ${sweep} ${n(e.x)},${n(e.y)}`;
-}
-
-/* Anatomical side-view male figure: shaped muscles, worked areas highlighted, elbow + body-arm angle arcs. */
-function figureSVG(ex, g) {
-  const P = ex.pose, n = (v) => v.toFixed(1);
-  const along = (a,b,d) => ({ x:a.x+(b.x-a.x)*d, y:a.y+(b.y-a.y)*d });
-  let blocks = "";
-  if (P.handLift > 0) blocks += `<rect class="fig-surface" x="${n(g.H.x-34)}" y="${n(g.handSurfaceY)}" width="86" height="${n(FIG.floorY-g.handSurfaceY)}" rx="4"/>`;
-  if (P.footLift > 0) { const bx = Math.max(2, g.F.x - 56); blocks += `<rect class="fig-surface" x="${n(bx)}" y="${n(g.footSurfaceY)}" width="${n(g.F.x + 42 - bx)}" height="${n(FIG.floorY-g.footSurfaceY)}" rx="4"/>`; }
-
-  const u = vunit(vsub(g.hip, g.S));
-  let fr = { x:-u.y, y:u.x };
-  if (((g.H.x-g.S.x)*fr.x + (g.H.y-g.S.y)*fr.y) < 0) fr = { x:u.y, y:-u.x };
-  const back = vmul(fr, -1), deg = (Math.atan2(u.y,u.x)*180/Math.PI).toFixed(1);
-
-  const thigh = lp(g.hip, g.knee, 18, 19, 13, vmul(back,2));
-  const shin  = lp(g.knee, g.ankle, 14, 14, 7, vmul(back,3));
-  const foot  = lp(g.ankle, g.toe, 7, 8, 5, {x:0,y:0});
-  const torso = lp(g.S, g.hip, 26, 25, 18, vmul(fr,4));
-  const neckEnd = vsub(g.head, vmul(vunit(vsub(g.head, g.S)), 13));
-  const neck  = lp(g.S, neckEnd, 13, 12, 12, {x:0,y:0});
-  const upper = lp(g.S, g.E, 17, 16, 10, {x:0,y:0});
-  const fore  = lp(g.E, g.H, 12, 11, 6, {x:0,y:0});
-  const chestC = vadd(along(g.S,g.hip,0.27), vmul(fr,8));
-  const coreC  = vadd(along(g.S,g.hip,0.60), vmul(fr,6));
-
-  return `<svg viewBox="0 0 ${FIG.vbW} ${FIG.vbH}" xmlns="http://www.w3.org/2000/svg" aria-label="${ex.name} side view, worked muscles highlighted">
-    <line class="fig-floor" x1="6" y1="${FIG.floorY}" x2="${FIG.vbW-6}" y2="${FIG.floorY}"/>
-    ${blocks}
-    <path class="body" d="${thigh}"/>
-    <path class="body" d="${shin}"/>
-    <path class="body" d="${foot}"/>
-    <path class="body" d="${torso}"/>
-    <ellipse class="mus${hotCls(ex,'core')}" cx="${n(coreC.x)}" cy="${n(coreC.y)}" rx="12" ry="7" transform="rotate(${deg} ${n(coreC.x)} ${n(coreC.y)})" fill="${muscleFill(ex,'core')}"/>
-    <ellipse class="mus${hotCls(ex,'chest','upper-chest')}" cx="${n(chestC.x)}" cy="${n(chestC.y)}" rx="15" ry="9.5" transform="rotate(${deg} ${n(chestC.x)} ${n(chestC.y)})" fill="${muscleFill(ex,'chest','upper-chest')}"/>
-    <path class="body" d="${neck}"/>
-    <ellipse class="body" cx="${n(g.head.x)}" cy="${n(g.head.y)}" rx="12.5" ry="10.5" transform="rotate(${deg} ${n(g.head.x)} ${n(g.head.y)})"/>
-    <path class="mus${hotCls(ex,'triceps')}" d="${upper}" fill="${muscleFill(ex,'triceps')}"/>
-    <ellipse class="mus${hotCls(ex,'front-delt')}" cx="${n(g.S.x)}" cy="${n(g.S.y)}" rx="10.5" ry="9.5" fill="${muscleFill(ex,'front-delt')}"/>
-    <path class="body" d="${fore}"/>
-    <ellipse class="fig-hand" cx="${n(g.H.x)}" cy="${n(g.H.y)}" rx="6.5" ry="3.6" transform="rotate(${deg} ${n(g.H.x)} ${n(g.H.y)})"/>
-  </svg>`;
-}
-
 /* elbow flare = angle the upper arms make with the torso (from above). This is what shifts
    the load between triceps (tucked) and chest (flared) — it's a top-down angle, so it's shown
    as a value rather than drawn on the side view. */
@@ -379,7 +186,7 @@ function emphasisNote(ex) {
   return `<b>Trains ${prim}.</b> Elbows sit about <b>${f}° from the torso</b> — ${EMPHASIS[ex.hands] || ""} <span class="muted">Tighter angle → more triceps; wider → more chest.</span>`;
 }
 
-/* top-down hand-placement diagram */
+/* hand-placement notes shown in the guide */
 const HAND_NOTES = {
   shoulder: "Hands about shoulder-width apart, fingers pointing forward.",
   wide:     "Hands ~1.5× shoulder width, fingers angled slightly out.",
@@ -387,47 +194,20 @@ const HAND_NOTES = {
   archer:   "Hands set wide. Work one side at a time; the far arm stays straight as a kickstand.",
   pseudo:   "Hands down by your waist, fingers turned out to the sides."
 };
-const hdHand = (cx, cy, rot) => `<ellipse class="hd-hand" cx="${cx}" cy="${cy}" rx="10" ry="13" transform="rotate(${rot||0} ${cx} ${cy})"/>`;
-const hdArm  = (a, b) => `<line class="hd-arm" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;
-function handDiagramSVG(p) {
-  const L = [72, 40], R = [128, 40];
-  const base = `<circle class="hd-head" cx="100" cy="16" r="9"/><rect class="hd-body" x="66" y="30" width="68" height="13" rx="6"/><rect class="hd-body" x="80" y="42" width="40" height="34" rx="12" opacity="0.5"/>`;
-  let s;
-  if (p === "wide")        { const hl=[38,84], hr=[162,84]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],-20)+hdHand(hr[0],hr[1],20); }
-  else if (p === "diamond"){ const hl=[94,94], hr=[106,94]; s = hdArm(L,hl)+hdArm(R,hr)+`<path class="hd-anno" d="M94,90 L106,90 L100,104 Z"/>`+hdHand(hl[0],hl[1],35)+hdHand(hr[0],hr[1],-35); }
-  else if (p === "archer") { const hl=[30,74], hr=[126,82]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],-80)+hdHand(hr[0],hr[1],0)+`<text class="hd-label" x="100" y="120" text-anchor="middle">weight over the bent arm</text>`; }
-  else if (p === "pseudo") { const hl=[84,98], hr=[116,98]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],-55)+hdHand(hr[0],hr[1],55); }
-  else                     { const hl=[72,80], hr=[128,80]; s = hdArm(L,hl)+hdArm(R,hr)+hdHand(hl[0],hl[1],0)+hdHand(hr[0],hr[1],0); }
-  return `<svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg" aria-label="hand placement, top view">${base}${s}</svg>`;
-}
+/* the exercise currently shown in the guide view */
+let pose = { ex: null };
 
-/* guide view: two static poses (top + bottom), worked muscles highlighted, both angles labelled */
-let pose = { ex:null, view:"anim" };
-function stopPose() {}   // no running animation any more; kept so go() can call it safely
-
-function poseBlock(label, g, ex, cue) {
-  return `<figure class="poserow">
-    <div class="poselabel">${label}<span class="ac ac-el">elbow ${elbowAngle(g)}°</span></div>
-    ${figureSVG(ex, g)}
-    <p class="posecue">${cue}</p>
-  </figure>`;
-}
-function renderDiagram(ex) {
-  const base = ex.pose.support === "knees" ? "head to knees" : "head to heels";
-  const topCue = `Start at the top: arms straight, body in one line (${base}). Brace your core and squeeze your glutes.`;
-  const botCue = `Bend your elbows about ${FLARE[ex.id] || 45}° from your body and lower your chest until it's a fist's height from the floor — then press back up.`;
-  $("#poseStage").innerHTML =
-    `<div class="twopose">${poseBlock("① Top — start", poseGeom(ex,0), ex, topCue)}${poseBlock("② Bottom", poseGeom(ex,1), ex, botCue)}</div>`;
-}
 function renderPhotos(ex) {
   const ph = (lbl, fr) => `<figure class="poserow"><div class="poselabel">${lbl}</div><div class="photo-demo"><img class="pdimg is-on" src="img/exercises/${ex.img}/${fr}.jpg" alt="${ex.name} ${lbl}" decoding="async"></div></figure>`;
   $("#poseStage").innerHTML = `<div class="twopose">${ph("① Top — start","top")}${ph("② Bottom","bottom")}</div>`;
 }
-function setDemo(view) {
-  pose.view = (view === "photo" && pose.ex.img) ? "photo" : "anim";
-  $$("#demoToggle [data-view]").forEach(b => b.classList.toggle("chip--on", b.dataset.view === pose.view));
-  if (pose.view === "photo") { $("#demoView").textContent = "real photos · top & bottom"; renderPhotos(pose.ex); }
-  else { $("#demoView").textContent = "anatomical · muscles + angles"; renderDiagram(pose.ex); }
+
+/* exercises without their own photos (archer, pseudo) get the looping form clip instead of a blank panel */
+function renderGuideClip(ex) {
+  const src = ex.video || DEFAULT_VIDEO;
+  $("#poseStage").innerHTML =
+    `<div class="guide-clip"><video src="${src}" autoplay loop muted playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback" preload="auto"></video></div>
+     <p class="muted small" style="text-align:center;margin-top:8px">General push-up form — follow the steps below for the ${ex.name}-specific movement.</p>`;
 }
 
 function openGuide(ex) {
@@ -442,7 +222,7 @@ function openGuide(ex) {
   $("#guideMuscles").innerHTML = muscleChipsHTML(ex.muscles);
   go("guide");                       // show the view BEFORE inserting the photos so they load
   if (ex.img) { $("#demoView").textContent = "real photos · top & bottom"; renderPhotos(ex); }
-  else { $("#demoView").textContent = ""; $("#poseStage").innerHTML = `<p class="muted small" style="text-align:center;padding:18px 8px">The form demo plays during the workout.</p>`; }
+  else { $("#demoView").textContent = "form clip"; renderGuideClip(ex); }
 }
 
 /* ===========================================================
@@ -471,6 +251,7 @@ function startSession(ex, sets, reps, rest) {
   $("#sessionMuscles").innerHTML = muscleChipsHTML(ex.muscles);
   go("session");
   renderSet();
+  try { history.pushState({ bettery: "session" }, ""); } catch (_) {}   // back-button guard for the active workout
 }
 
 function renderSetDots() {
@@ -528,20 +309,22 @@ function updateRing() {
 
 function tickRest() {
   session.restLeft--;
-  if (session.restLeft <= 0) { endRest(); return; }
+  if (session.restLeft <= 0) { endRest(true); return; }
   updateRing();
 }
 
-function endRest() {
+function endRest(announce) {
   clearInterval(restTimer);
   restTimer = null;
-  if (state.settings.sound) beep();
-  notify("Rest over 💪", `Time for set ${session.currentSet + 1} of ${session.ex.name}.`);
+  if (announce) {                       // only when rest ran out on its own, not when skipped
+    if (state.settings.sound) beep();
+    notify("Rest over 💪", `Time for set ${session.currentSet + 1} of ${session.ex.name}.`);
+  }
   session.currentSet++;
   renderSet();
 }
 
-function skipRest() { if (session && session.resting) endRest(); }
+function skipRest() { if (session && session.resting) endRest(false); }
 function addRest() { if (session && session.resting) { session.restLeft += 15; session.rest += 15; updateRing(); } }
 
 function finishSession() {
@@ -579,9 +362,13 @@ function showSummary(rec, ex) {
   $("[data-again]", node).onclick = () => { m.close(); openSetup(ex); };
 }
 
+let exiting = false;
 async function exitSession() {
   if (!session) { go("train"); return; }
+  if (exiting) return;                 // a confirm is already open
+  exiting = true;
   const ok = await confirmDialog("End workout?", "Your progress in this session won't be saved.", "End");
+  exiting = false;
   if (ok) { clearInterval(restTimer); session = null; go("train"); }
 }
 
@@ -822,8 +609,12 @@ function bindEvents() {
     $("#installBtn").classList.add("hidden");
   });
 
-  // warn before leaving an active workout (in-page, no native dialog)
-  window.addEventListener("popstate", () => {});
+  // back button during an active workout → in-page confirm (no native dialog), re-arm the guard
+  window.addEventListener("popstate", () => {
+    if (!session || exiting) return;
+    history.pushState({ bettery: "session" }, "");
+    exitSession();
+  });
 }
 
 async function registerSW() {
