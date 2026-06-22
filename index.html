@@ -87,7 +87,10 @@
             <div class="rep-value" id="repValue">12</div>
             <button class="step-btn" id="repPlus" aria-label="more reps">+</button>
           </div>
-          <button class="btn btn-primary btn-big" id="completeBtn">✓ Complete set</button>
+          <div class="set-actions">
+            <button class="btn btn-voice btn-big" id="voiceBtn">🔊 Count</button>
+            <button class="btn btn-primary btn-big" id="completeBtn">✓ Done</button>
+          </div>
         </div>
 
         <!-- Rest panel -->
@@ -181,6 +184,14 @@
           <div class="row">
             <label for="soundToggle">Beep on rest end</label>
             <input type="checkbox" id="soundToggle" class="switch" />
+          </div>
+          <div class="row">
+            <label for="voiceToggle">Voice rep counter</label>
+            <input type="checkbox" id="voiceToggle" class="switch" />
+          </div>
+          <div class="row">
+            <label>Count tempo (sec / rep)</label>
+            <div class="mini-step" data-def="tempo"></div>
           </div>
         </div>
 

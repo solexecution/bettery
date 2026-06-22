@@ -4,7 +4,7 @@
    =========================================================== */
 "use strict";
 
-const VERSION = "1.6.3";
+const VERSION = "1.6.4";
 const KEY = "bettery.v1";
 
 /* ---------- tiny DOM helpers ---------- */
@@ -23,7 +23,7 @@ function muscleChipsHTML(muscleMap) {
 /* ===========================================================
    State + persistence
    =========================================================== */
-const DEFAULTS = { sets: 3, reps: 12, rest: 60, sound: true, reminder: "" };
+const DEFAULTS = { sets: 3, reps: 12, rest: 60, sound: true, reminder: "", voice: true, tempo: 3 };
 let state = loadState();
 let session = null;     // active workout
 let restTimer = null;
@@ -271,6 +271,7 @@ function renderSet() {
   $("#setPanel").classList.remove("hidden");
   $("#setLabel").textContent = `Set ${session.currentSet} of ${session.sets}`;
   $("#repValue").textContent = session.repValue;
+  setupSetActions();
   renderSetDots();
 }
 
@@ -282,6 +283,7 @@ function changeReps(d) {
 
 function completeSet() {
   if (!session) return;
+  cancelCount();
   session.results.push(session.repValue);
   if (session.currentSet >= session.sets) { finishSession(); return; }
   startRest();
@@ -330,6 +332,7 @@ function addRest() { if (session && session.resting) { session.restLeft += 15; s
 
 function finishSession() {
   clearInterval(restTimer);
+  cancelCount();
   const total = session.results.reduce((a, b) => a + b, 0);
   const rec = {
     date: Date.now(),
@@ -370,7 +373,7 @@ async function exitSession() {
   exiting = true;
   const ok = await confirmDialog("End workout?", "Your progress in this session won't be saved.", "End");
   exiting = false;
-  if (ok) { clearInterval(restTimer); session = null; go("train"); }
+  if (ok) { clearInterval(restTimer); cancelCount(); session = null; go("train"); }
 }
 
 /* ===========================================================
@@ -427,6 +430,8 @@ function renderSettings() {
   updateNotifyUI();
   $("#reminderTime").value = state.settings.reminder || "";
   $("#soundToggle").checked = !!state.settings.sound;
+  $("#voiceToggle").checked = !!state.settings.voice;
+  if (!voiceSupported()) { $("#voiceToggle").checked = false; $("#voiceToggle").disabled = true; }
   $("#verLabel").textContent = `v${VERSION}`;
   $$(".mini-step[data-def]").forEach(h => {
     if (h.dataset.bound) return; h.dataset.bound = "1";
@@ -434,6 +439,7 @@ function renderSettings() {
     if (f === "sets") miniStep(h, "sets", 1, 12, 1);
     if (f === "reps") miniStep(h, "reps", 1, 100, 1);
     if (f === "rest") miniStep(h, "rest", 10, 240, 5);
+    if (f === "tempo") miniStep(h, "tempo", 2, 6, 1);
   });
 }
 
@@ -483,6 +489,102 @@ function beep() {
       o.start(t); o.stop(t + 0.18);
     });
   } catch (_) {}
+}
+
+/* ===========================================================
+   Voice rep counter — speaks each rep aloud, hands-free
+   =========================================================== */
+let voices = [];
+function loadVoices() { try { voices = window.speechSynthesis.getVoices() || []; } catch (_) { voices = []; } }
+if ("speechSynthesis" in window) { loadVoices(); try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (_) {} }
+
+function voiceSupported() { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined"; }
+function voiceEnabled()   { return !!state.settings.voice && voiceSupported(); }
+
+function pickVoice() {                                   // prefer an on-device English voice (snappy + works offline)
+  const en = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+  return en.find(v => v.localService) || en[0] || null;
+}
+function speak(text) {
+  if (!voiceSupported()) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US"; u.rate = 1.05; u.pitch = 1; u.volume = 1;
+    const v = pickVoice(); if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  } catch (_) {}
+}
+
+let countTimer = null;
+let counting = false;
+
+function setCountingUI(on) {
+  counting = on;
+  const vb = $("#voiceBtn"); if (!vb) return;
+  vb.classList.toggle("counting", on);
+  vb.textContent = on ? "⏸ Stop" : "🔊 Count";
+  $("#repValue").classList.toggle("counting", on);
+  $("#repMinus").disabled = on;
+  $("#repPlus").disabled  = on;
+}
+
+/* set up the active-set buttons (voice hero + manual log) for the current set */
+function setupSetActions() {
+  cancelCount();
+  setCountingUI(false);
+  const vb = $("#voiceBtn"), cb = $("#completeBtn");
+  if (voiceEnabled()) {
+    vb.classList.remove("hidden");
+    cb.classList.remove("btn-primary"); cb.classList.add("btn-ghost");
+  } else {
+    vb.classList.add("hidden");
+    cb.classList.add("btn-primary"); cb.classList.remove("btn-ghost");
+  }
+}
+
+function cancelCount() {
+  clearTimeout(countTimer); countTimer = null; counting = false;
+  try { window.speechSynthesis.cancel(); } catch (_) {}
+}
+
+function toggleVoiceCount() {
+  if (!session || session.resting) return;
+  if (counting) { stopCount(); return; }
+  startCount();
+}
+
+function startCount() {
+  if (!voiceSupported()) { toast("Voice isn't supported on this browser."); return; }
+  const target = session.repValue;
+  if (target < 1) { toast("Set a rep target first."); return; }
+  try { window.speechSynthesis.cancel(); } catch (_) {}
+  setCountingUI(true);
+  speak("Let's go");
+  let n = 0;
+  const tempoMs = Math.round((state.settings.tempo || 3) * 1000);
+  const tick = () => {
+    if (!counting) return;                       // stopped mid-count
+    n++;
+    $("#repValue").textContent = n;
+    session.repValue = n;                        // the logged number tracks what's actually counted
+    speak(String(n));
+    if (n >= target) { finishCount(); return; }
+    countTimer = setTimeout(tick, tempoMs);
+  };
+  countTimer = setTimeout(tick, 1100);           // brief lead-in after "Let's go"
+}
+
+function finishCount() {
+  clearTimeout(countTimer); countTimer = null;
+  setCountingUI(false);
+  if (state.settings.sound) beep();
+  speak("Set complete");
+  setTimeout(completeSet, 400);                  // log the set, then rest / finish
+}
+
+function stopCount() {                            // count reached stays as the rep value — tap Complete to log it
+  cancelCount();
+  setCountingUI(false);
 }
 
 /* Best-effort daily reminder: fires while the app is open/recently used.
@@ -573,6 +675,7 @@ function bindEvents() {
   $("#repMinus").addEventListener("click", () => changeReps(-1));
   $("#repPlus").addEventListener("click", () => changeReps(1));
   $("#completeBtn").addEventListener("click", completeSet);
+  $("#voiceBtn").addEventListener("click", toggleVoiceCount);
   $("#skipRest").addEventListener("click", skipRest);
   $("#addRest").addEventListener("click", addRest);
   $("#exitSession").addEventListener("click", exitSession);
@@ -600,6 +703,7 @@ function bindEvents() {
     else { clearTimeout(reminderTimer); toast("Daily reminder off."); }
   });
   $("#soundToggle").addEventListener("change", (e) => { state.settings.sound = e.target.checked; save(); });
+  $("#voiceToggle").addEventListener("change", (e) => { state.settings.voice = e.target.checked; save(); });
 
   // install
   $("#installBtn").addEventListener("click", async () => {

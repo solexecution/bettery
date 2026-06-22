@@ -93,6 +93,8 @@ p{margin:.25rem 0}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
 .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
 .btn-danger{background:var(--danger);color:#fff}
+.btn-voice{background:linear-gradient(135deg,var(--ok),#15916a);color:#052017}
+.btn-voice.counting{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff}
 .btn-big{width:100%;padding:9px;font-size:.95rem;margin-top:5px}
 .full{width:100%}
 .link-btn{background:none;border:none;color:var(--muted);font-size:.95rem;cursor:pointer;font-family:inherit;padding:8px;min-width:48px;text-align:left}
@@ -148,10 +150,13 @@ body.session-mode .session-head .link-btn{pointer-events:auto;background:rgba(8,
 
 .set-panel{text-align:center;padding:8px 12px;margin-bottom:0}
 .set-label{font-weight:800;font-size:.85rem;margin-bottom:0}
+.set-actions{display:flex;gap:10px;margin-top:6px}
+.set-actions .btn{flex:1;width:auto;margin-top:0}
 .rep-stepper{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0}
 .step-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.2rem;font-weight:700;cursor:pointer;display:grid;place-items:center}
 .step-btn:active{transform:scale(.92)}
 .rep-value{font-size:1.8rem;font-weight:800;min-width:50px;font-variant-numeric:tabular-nums}
+.rep-value.counting{color:var(--ok)}
 
 /* ===== Rest ring ===== */
 .rest-panel{text-align:center;padding:8px 12px;margin-bottom:0}
