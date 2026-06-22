@@ -37,8 +37,8 @@ p{margin:.25rem 0}
 #app{
   max-width:var(--maxw);
   margin:0 auto;
-  min-height:100vh;
-  min-height:100dvh;
+  height:100vh;
+  height:100dvh;          /* definite height so the session view can flex to exactly one screen */
   display:flex;
   flex-direction:column;
   position:relative;
@@ -60,9 +60,9 @@ p{margin:.25rem 0}
 }
 
 /* ===== Views ===== */
-#main{flex:1;padding:2px 16px 84px;overflow-y:auto}
+#main{flex:1;padding:2px 16px 84px;overflow-y:auto;display:flex;flex-direction:column}
 .view{display:none;animation:fade .25s ease}
-.view--active{display:block}
+.view--active{display:block;flex:1 1 auto;min-height:0}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .view-head{margin:8px 0 14px}
 .greeting{font-size:1.35rem;font-weight:800;margin:6px 0 16px}
@@ -93,7 +93,7 @@ p{margin:.25rem 0}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
 .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
 .btn-danger{background:var(--danger);color:#fff}
-.btn-big{width:100%;padding:12px;font-size:1.02rem;margin-top:8px}
+.btn-big{width:100%;padding:11px;font-size:1rem;margin-top:6px}
 .full{width:100%}
 .link-btn{background:none;border:none;color:var(--muted);font-size:.95rem;cursor:pointer;font-family:inherit;padding:8px;min-width:48px;text-align:left}
 
@@ -126,28 +126,39 @@ p{margin:.25rem 0}
 .session-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px}
 .session-title{text-align:center;flex:1}
 .session-title h1{font-size:1.05rem}
-.session-video{margin:0 0 8px;display:flex;justify-content:center}
-.session-video video{display:block;height:46vh;width:auto;max-width:100%;border-radius:12px;background:#0b0f17}
-.set-dots{display:flex;justify-content:center;gap:7px;margin:6px 0 8px}
+/* active workout: immersive full-screen column — video fills, controls stay compact, never scrolls */
+#view-session.view--active{display:flex;flex-direction:column;gap:6px;position:relative}
+#sessionMuscles{display:none}                          /* muscle map is in the guide; hidden here so the video can dominate */
+body.session-mode .topbar,
+body.session-mode .bottomnav{display:none}             /* hide app chrome during a set so the video owns the screen */
+body.session-mode #main{padding:calc(env(safe-area-inset-top) + 4px) 10px calc(env(safe-area-inset-bottom) + 4px);overflow:hidden}
+body.session-mode #setPanel .muted.small{display:none}   /* "Reps this set" — drop to give the video more room */
+/* float the End control over the video so the header row reclaims no vertical space */
+body.session-mode .session-head{position:absolute;top:6px;left:4px;right:4px;margin:0;z-index:5;pointer-events:none}
+body.session-mode .session-title{display:none}
+body.session-mode .session-head .link-btn{pointer-events:auto;background:rgba(8,11,18,.55);color:var(--text);border-radius:999px;padding:7px 14px;min-width:0;backdrop-filter:blur(4px)}
+.session-video{flex:1 1 auto;min-height:0;margin:0;display:flex;justify-content:center;align-items:center}
+.session-video video{display:block;height:100%;width:100%;max-height:100%;max-width:100%;object-fit:cover;border-radius:12px;background:#0b0f17}
+.set-dots{display:flex;justify-content:center;gap:7px;margin:2px 0 4px}
 .set-dot{width:9px;height:9px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line)}
 .set-dot.done{background:var(--ok);border-color:var(--ok)}
 .set-dot.current{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,71,87,.2)}
 
-.set-panel{text-align:center;padding:12px 14px}
-.set-label{font-weight:800;font-size:.98rem;margin-bottom:0}
-.rep-stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:4px 0}
-.step-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.45rem;font-weight:700;cursor:pointer;display:grid;place-items:center}
+.set-panel{text-align:center;padding:8px 12px;margin-bottom:0}
+.set-label{font-weight:800;font-size:.9rem;margin-bottom:0}
+.rep-stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:2px 0}
+.step-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.35rem;font-weight:700;cursor:pointer;display:grid;place-items:center}
 .step-btn:active{transform:scale(.92)}
-.rep-value{font-size:2.4rem;font-weight:800;min-width:64px;font-variant-numeric:tabular-nums}
+.rep-value{font-size:2rem;font-weight:800;min-width:56px;font-variant-numeric:tabular-nums}
 
 /* ===== Rest ring ===== */
-.rest-panel{text-align:center}
-.ring-wrap{position:relative;width:180px;height:180px;margin:10px auto}
-.ring{width:180px;height:180px;transform:rotate(-90deg)}
+.rest-panel{text-align:center;padding:8px 12px;margin-bottom:0}
+.ring-wrap{position:relative;width:148px;height:148px;margin:4px auto}
+.ring{width:148px;height:148px;transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:var(--surface-2);stroke-width:8}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;
   stroke-dasharray:326.7;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear}
-.ring-num{position:absolute;inset:0;display:grid;place-items:center;font-size:2.8rem;font-weight:800;font-variant-numeric:tabular-nums}
+.ring-num{position:absolute;inset:0;display:grid;place-items:center;font-size:2.3rem;font-weight:800;font-variant-numeric:tabular-nums}
 .rest-actions{display:flex;gap:10px;justify-content:center;margin-top:6px}
 
 /* ===== History ===== */

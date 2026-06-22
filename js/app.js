@@ -4,7 +4,7 @@
    =========================================================== */
 "use strict";
 
-const VERSION = "1.6.0";
+const VERSION = "1.6.1";
 const KEY = "bettery.v1";
 
 /* ---------- tiny DOM helpers ---------- */
@@ -65,6 +65,7 @@ function computeStats() {
    Navigation
    =========================================================== */
 function go(view) {
+  document.body.classList.toggle("session-mode", view === "session");   // immersive full-screen during a set
   if (view !== "session") { const sv = $("#sessionVideo"); if (sv) sv.innerHTML = ""; }  // stop the demo clip
   if (view !== "guide")   { const gv = $("#poseStage video"); if (gv) gv.pause(); }       // pause the guide clip
   $$(".view").forEach(v => v.classList.remove("view--active"));
