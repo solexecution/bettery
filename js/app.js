@@ -4,7 +4,7 @@
    =========================================================== */
 "use strict";
 
-const VERSION = "1.6.4";
+const VERSION = "1.6.5";
 const KEY = "bettery.v1";
 
 /* ---------- tiny DOM helpers ---------- */
@@ -23,7 +23,7 @@ function muscleChipsHTML(muscleMap) {
 /* ===========================================================
    State + persistence
    =========================================================== */
-const DEFAULTS = { sets: 3, reps: 12, rest: 60, sound: true, reminder: "", voice: true, tempo: 3 };
+const DEFAULTS = { sets: 3, reps: 12, rest: 60, sound: true, reminder: "", voice: true, tempo: 3, voiceName: "" };
 let state = loadState();
 let session = null;     // active workout
 let restTimer = null;
@@ -432,6 +432,7 @@ function renderSettings() {
   $("#soundToggle").checked = !!state.settings.sound;
   $("#voiceToggle").checked = !!state.settings.voice;
   if (!voiceSupported()) { $("#voiceToggle").checked = false; $("#voiceToggle").disabled = true; }
+  renderVoiceOptions();
   $("#verLabel").textContent = `v${VERSION}`;
   $$(".mini-step[data-def]").forEach(h => {
     if (h.dataset.bound) return; h.dataset.bound = "1";
@@ -495,15 +496,26 @@ function beep() {
    Voice rep counter — speaks each rep aloud, hands-free
    =========================================================== */
 let voices = [];
-function loadVoices() { try { voices = window.speechSynthesis.getVoices() || []; } catch (_) { voices = []; } }
+function loadVoices() { try { voices = window.speechSynthesis.getVoices() || []; } catch (_) { voices = []; } renderVoiceOptions(); }
 if ("speechSynthesis" in window) { loadVoices(); try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (_) {} }
 
 function voiceSupported() { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined"; }
 function voiceEnabled()   { return !!state.settings.voice && voiceSupported(); }
 
-function pickVoice() {                                   // prefer an on-device English voice (snappy + works offline)
+/* No celebrity/real-person voices are available to the web — only what's installed on the device.
+   So we default to the most natural-sounding female English voice the browser offers and let the
+   user override it per device in Settings. */
+const FEMALE_HINTS = ["samantha","ava","allison","susan","victoria","karen","moira","tessa","fiona","serena","zira","aria","jenny","michelle","sonia","libby","clara","amber","ashley","nora","amelie","joana","google us english","female","woman"];
+function isLikelyFemale(v) { const n = (v.name || "").toLowerCase(); return FEMALE_HINTS.some(h => n.includes(h)); }
+
+function pickVoice() {
+  const want = state.settings.voiceName;
+  if (want) { const m = voices.find(v => v.voiceURI === want || v.name === want); if (m) return m; }
   const en = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
-  return en.find(v => v.localService) || en[0] || null;
+  return en.find(v => isLikelyFemale(v) && v.localService)   // natural female, on-device
+      || en.find(v => isLikelyFemale(v))                     // any female English
+      || en.find(v => v.localService)                        // any on-device English
+      || en[0] || null;
 }
 function speak(text) {
   if (!voiceSupported()) return;
@@ -585,6 +597,46 @@ function finishCount() {
 function stopCount() {                            // count reached stays as the rep value — tap Complete to log it
   cancelCount();
   setCountingUI(false);
+}
+
+/* Settings: list the device's English voices so the user can choose the counting voice */
+function renderVoiceOptions() {
+  const sel = $("#voiceSelect"); if (!sel) return;
+  const en = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+  sel.innerHTML = "";
+  if (!en.length) { const o = document.createElement("option"); o.value = ""; o.textContent = "System default"; sel.appendChild(o); return; }
+  const cur = pickVoice();
+  en.forEach(v => {
+    const o = document.createElement("option");
+    o.value = v.voiceURI;
+    o.textContent = v.name + (v.localService ? "" : " · online");
+    if (cur && v.voiceURI === cur.voiceURI) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+/* Settings: audition the chosen voice counting 1 → 20 */
+let previewTimer = null, previewing = false;
+function previewVoiceCount() {
+  const btn = $("#previewVoice");
+  if (previewing) {                                       // tapping again stops it
+    clearTimeout(previewTimer); previewing = false;
+    try { window.speechSynthesis.cancel(); } catch (_) {}
+    if (btn) btn.textContent = "▶ Hear it count 1–20";
+    return;
+  }
+  if (!voiceSupported()) { toast("Voice isn't supported on this browser."); return; }
+  previewing = true; if (btn) btn.textContent = "⏸ Stop";
+  try { window.speechSynthesis.cancel(); } catch (_) {}
+  let n = 0;
+  const step = () => {
+    if (!previewing) return;
+    n++;
+    speak(String(n));
+    if (n >= 20) { previewing = false; if (btn) btn.textContent = "▶ Hear it count 1–20"; return; }
+    previewTimer = setTimeout(step, 650);
+  };
+  previewTimer = setTimeout(step, 150);
 }
 
 /* Best-effort daily reminder: fires while the app is open/recently used.
@@ -704,6 +756,8 @@ function bindEvents() {
   });
   $("#soundToggle").addEventListener("change", (e) => { state.settings.sound = e.target.checked; save(); });
   $("#voiceToggle").addEventListener("change", (e) => { state.settings.voice = e.target.checked; save(); });
+  $("#voiceSelect").addEventListener("change", (e) => { state.settings.voiceName = e.target.value; save(); speak("Hi. I'll count your reps."); });
+  $("#previewVoice").addEventListener("click", previewVoiceCount);
 
   // install
   $("#installBtn").addEventListener("click", async () => {
