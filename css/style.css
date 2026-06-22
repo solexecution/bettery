@@ -93,7 +93,7 @@ p{margin:.25rem 0}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
 .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
 .btn-danger{background:var(--danger);color:#fff}
-.btn-big{width:100%;padding:11px;font-size:1rem;margin-top:6px}
+.btn-big{width:100%;padding:9px;font-size:.95rem;margin-top:5px}
 .full{width:100%}
 .link-btn{background:none;border:none;color:var(--muted);font-size:.95rem;cursor:pointer;font-family:inherit;padding:8px;min-width:48px;text-align:left}
 
@@ -133,6 +133,8 @@ body.session-mode .topbar,
 body.session-mode .bottomnav{display:none}             /* hide app chrome during a set so the video owns the screen */
 body.session-mode #main{padding:calc(env(safe-area-inset-top) + 4px) 10px calc(env(safe-area-inset-bottom) + 4px);overflow:hidden}
 body.session-mode #setPanel .muted.small{display:none}   /* "Reps this set" — drop to give the video more room */
+body.session-mode #app{max-width:none}                   /* full-bleed: video fills the whole screen width (foldable/tablet), not a 480px column */
+body.session-mode #setPanel,body.session-mode #restPanel{width:100%;max-width:460px;margin:0 auto}
 /* float the End control over the video so the header row reclaims no vertical space */
 body.session-mode .session-head{position:absolute;top:6px;left:4px;right:4px;margin:0;z-index:5;pointer-events:none}
 body.session-mode .session-title{display:none}
@@ -145,20 +147,20 @@ body.session-mode .session-head .link-btn{pointer-events:auto;background:rgba(8,
 .set-dot.current{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,71,87,.2)}
 
 .set-panel{text-align:center;padding:8px 12px;margin-bottom:0}
-.set-label{font-weight:800;font-size:.9rem;margin-bottom:0}
-.rep-stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:2px 0}
-.step-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.35rem;font-weight:700;cursor:pointer;display:grid;place-items:center}
+.set-label{font-weight:800;font-size:.85rem;margin-bottom:0}
+.rep-stepper{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0}
+.step-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.2rem;font-weight:700;cursor:pointer;display:grid;place-items:center}
 .step-btn:active{transform:scale(.92)}
-.rep-value{font-size:2rem;font-weight:800;min-width:56px;font-variant-numeric:tabular-nums}
+.rep-value{font-size:1.8rem;font-weight:800;min-width:50px;font-variant-numeric:tabular-nums}
 
 /* ===== Rest ring ===== */
 .rest-panel{text-align:center;padding:8px 12px;margin-bottom:0}
-.ring-wrap{position:relative;width:148px;height:148px;margin:4px auto}
-.ring{width:148px;height:148px;transform:rotate(-90deg)}
+.ring-wrap{position:relative;width:136px;height:136px;margin:4px auto}
+.ring{width:136px;height:136px;transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:var(--surface-2);stroke-width:8}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;
   stroke-dasharray:326.7;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear}
-.ring-num{position:absolute;inset:0;display:grid;place-items:center;font-size:2.3rem;font-weight:800;font-variant-numeric:tabular-nums}
+.ring-num{position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums}
 .rest-actions{display:flex;gap:10px;justify-content:center;margin-top:6px}
 
 /* ===== History ===== */
